@@ -27,4 +27,4 @@ Solución integral de software basada en **Domain-Driven Design (DDD)**, patrón
 
 ## Enlaces Oficiales de Entrega
 
-* **Repositorio GitHub:** `https://github.com/DamiNerio/cleanpro-PIA-CLNG-` 
+* **Repositorio GitHub:** `https://github.com/DamiNerio/cleanpro-CLNG-PIA-` 
