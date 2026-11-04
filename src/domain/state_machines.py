@@ -84,6 +84,7 @@ class OrdenServicioStateMachine:
         EstadoOrdenServicio.FACTURADA: set(),
     }
 
+
     @classmethod
     def transicionar(cls, estado_actual: EstadoOrdenServicio, estado_nuevo: EstadoOrdenServicio) -> EstadoOrdenServicio:
         if estado_nuevo not in cls.TRANSICIONES.get(estado_actual, set()):
