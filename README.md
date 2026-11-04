@@ -22,23 +22,24 @@ Solución integral de software basada en **Domain-Driven Design (DDD)**, patrón
 ## Enlaces Oficiales de Entrega
 
 * **Repositorio GitHub:** `https://github.com/DamiNerio/cleanpro-CLNG-PIA-` 
-* **Portal Público del Cliente (Producción Render):** `https://cleanpro-bjr6.onrender.com/` *(o el subdominio asignado por Render a tu servicio `CleanPro`)*
+* **Portal Público del Cliente (Producción Render):** `https://cleanpro-bjr6.onrender.com/`
 * **Intranet Operativa y Administrativa (Personal CleanPro):** `https://cleanpro-bjr6.onrender.com/admin`
 * **Swagger UI / OpenAPI Activo en Producción:** `https://cleanpro-bjr6.onrender.com/docs`
 
 ## Configuración por Variables de Entorno (12-Factor App)
 
-El archivo `.env.example` parametriza todas las políticas y límites de negocio de CleanPro sin exponer secretos reales ni requerir cambios de código (CA-02.2):
+El archivo `.env.example` y la sección *Environment Variables* en Render parametrizan todas las políticas de negocio de CleanPro sin exponer secretos reales ni requerir cambios de programación (CA-02.2):
 
 | Variable | Valor por Defecto | Regla Asociada | Descripción |
 | :--- | :--- | :--- | :--- |
-| `DATABASE_URL` | `sqlite:///./cleanpro.db` | Infraestructura | Cadena de conexión a BD (SQLite local o PostgreSQL en Docker). |
-| `MAX_DESCUENTO_COORDINADOR` | `10.0` | **RN-01** | Porcentaje máximo de descuento que autoriza un coordinador (≤10%). |
-| `MAX_M2_COORDINADOR` | `300.0` | **RN-02** | Superficie máxima en m² que confirma un coordinador sin gerencia. |
+| `PYTHON_VERSION` | `3.11.9` | Despliegue Render | Versión de Python en la nube para uso de binarios precompilados (*wheels*). |
+| `DATABASE_URL` | `sqlite:///./cleanpro.db` | Infraestructura | Cadena de conexión a base de datos (SQLite o PostgreSQL en Docker). |
+| `MAX_DESCUENTO_COORDINADOR` | `10.0` | **RN-01** | Porcentaje máximo de descuento que autoriza un coordinador (hasta 10%). |
+| `MAX_M2_COORDINADOR` | `300.0` | **RN-02** | Superficie máxima en m2 que confirma un coordinador sin gerencia. |
 | `MAX_MONTO_COORDINADOR` | `8000.0` | **RN-02** | Monto máximo en MXN que confirma un coordinador sin gerencia. |
-| `RENDIMIENTO_M2_PERSONA_HORA` | `60.0` | **US-02** | Rendimiento en m² limpiados por persona cada hora. |
+| `RENDIMIENTO_M2_PERSONA_HORA` | `60.0` | **US-02** | Rendimiento en m2 limpiados por persona cada hora. |
 | `TARIFA_POR_M2` | `25.0` | **US-02, RN-07** | Tarifa base por metro cuadrado para cotización y recálculo proporcional. |
-| `HORAS_CANCELACION_SIN_COSTO` | `24` | **RN-04** | Horas mínimas de anticipación para cancelar o reprogramar sin penalización del 50%. |
+| `HORAS_CANCELACION_SIN_COSTO` | `24` | **RN-04** | Horas mínimas de anticipación para cancelar o reprogramar sin cargo del 50%. |
 | `MAX_REPROGRAMACIONES_MES` | `2` | **RN-08** | Límite de reprogramaciones mensuales antes de alertar a gerencia. |
 | `SLA_RESPUESTA_HORAS` | `4.0` | **RN-03** | Tiempo máximo en horas hábiles para responder solicitudes de cotización. |
 
@@ -46,39 +47,53 @@ El archivo `.env.example` parametriza todas las políticas y límites de negocio
 
 ## Instrucciones de Instalación y Ejecución Local
 
-### 1. Clonar el repositorio y preparar el entorno virtual
-```bash
-git clone https://github.com/DamiNerio/cleanpro-CLNG-PIA-.git
-cd CleanPro-CLNG-PIA-
-cp .env.example .env
-python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
-pip install -r requirements.txt
+### 1. Clonar el repositorio y activar el entorno virtual
+```powershell
+git clone https://github.com/DamiNerio/CleanPro-PIA-CLNG-.git
+cd CleanPro-PIA-CLNG-
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
-### 2. Iniciar el servidor API REST
-```bash
-uvicorn src.api.main:app --reload --port 8000
+### 2. Ejecutar la suite de pruebas y verificar cobertura (>= 80%)
+```powershell
+$env:PYTHONPATH="."
+python -m pytest --cov=src --cov-report=term-missing --cov-fail-under=80
 ```
-* **Swagger UI interactivo:** Abrir en el navegador `http://localhost:8000/docs`
+*Resultado actual verificado:* **82.25% de cobertura total** con todas las pruebas unitarias y de integración en verde.
 
-### 3. Ejecutar la suite de pruebas y verificar cobertura ($\ge 80\%$)
-```bash
-pytest --cov=src --cov-report=term-missing --cov-fail-under=80
+### 3. Iniciar el servidor web y API REST
+```powershell
+python -m uvicorn src.api.main:app --reload --port 8000
+```
+* **Portal del Cliente:** `http://localhost:8000/`
+* **Intranet Administrativa:** `http://localhost:8000/admin`
+* **Swagger UI (API):** `http://localhost:8000/docs`
+
+---
+
+## Ejecución con Docker Compose (DB + App + Tests)
+
+Para levantar la base de datos PostgreSQL, el servidor de la aplicación y ejecutar el contenedor de pruebas en un entorno reproducible:
+
+```powershell
+docker compose up --build
+```
+
+Para detener y limpiar los contenedores:
+```powershell
+docker compose down
 ```
 
 ---
 
-## Ejecución con Docker Compose (`DB + App + Tests`)
+## Configuración de Despliegue en Render
 
-Para levantar la base de datos PostgreSQL, la aplicación web y ejecutar automáticamente la suite de pruebas en contenedores aislados y reproducibles:
-
-```bash
-docker compose up --build
-```
-
-Para ejecutar únicamente el contenedor de pruebas verificando el umbral de cobertura del $80\%$:
-
-```bash
-docker compose run --rm tests
-```
+El servicio web se encuentra desplegado en **Render** conectado directamente a la rama `main` del repositorio de GitHub con los siguientes parámetros:
+* **Name:** `CleanPro`
+* **Language:** `Python 3` (`PYTHON_VERSION = 3.11.9`)
+* **Build Command:** `pip install -r requirements.txt`
+* **Start Command:** `uvicorn src.api.main:app --host 0.0.0.0 --port $PORT`
+* **Environment Variables:** Cargadas desde `.env.example`.
