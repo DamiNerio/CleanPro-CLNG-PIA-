@@ -1,6 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import List, Optional, Dict
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from src.domain.value_objects import DomainError
@@ -53,6 +55,55 @@ class CierreDTO(BaseModel):
     nombre_firmante: str = Field(..., example="Ing. Roberto Garza")
     conformidad: bool = Field(default=True)
     motivo_inconformidad: str = Field(default="")
+
+class AusenciaDTO(BaseModel):
+    integrante_ausente: str
+    integrante_reemplazo: Optional[str] = None
+    motivo: str
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def interfaz_web_cleanpro():
+    html_path = Path(__file__).parent / "index.html"
+    return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+
+@app.get("/api/estado", tags=["4. Administración y Reportes"])
+def obtener_estado_completo():
+    sin_facturar = [r for r in repo.registros_facturables.values() if not r["folio_factura"]]
+    return {
+        "kpis": {
+            "total_cotizaciones": len(repo.cotizaciones),
+            "total_ordenes": len(repo.ordenes),
+            "servicios_pendientes_facturar": len(sin_facturar),
+            "cambios_personal_registrados": len(repo.cambios_personal),
+        },
+        "cotizaciones": [
+            {
+                "folio": c.folio,
+                "cliente": c.cliente_nombre,
+                "superficie_m2": c.superficie.metros_cuadrados,
+                "descuento": c.descuento.porcentaje,
+                "total": c.total.valor,
+                "estado": c.estado.value,
+                "horas_sugeridas": c.horas_persona_sugeridas,
+                "personal_sugerido": c.personal_sugerido,
+            }
+            for c in repo.cotizaciones.values()
+        ],
+        "ordenes": [
+            {
+                "folio": o.folio,
+                "cliente": o.cliente_nombre,
+                "superficie_m2": o.superficie.metros_cuadrados,
+                "precio_total": o.precio_total.valor,
+                "estado": o.estado.value,
+                "cuadrilla": o.cuadrilla_asignada.id if o.cuadrilla_asignada else None,
+                "incidencias": len(o.incidencias),
+            }
+            for o in repo.ordenes.values()
+        ],
+        "facturables": list(repo.registros_facturables.values()),
+        "cambios_personal": repo.cambios_personal,
+    }
 
 @app.post("/api/cotizaciones", tags=["1. Cotización"])
 def crear_cotizacion(dto: SolicitudCotizacionDTO):
@@ -142,6 +193,23 @@ def cerrar_servicio(folio_orden: str, dto: CierreDTO):
         }
     except DomainError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/ordenes/{folio_orden}/ausencia", tags=["3. Ejecución"])
+def reportar_ausencia_endpoint(folio_orden: str, dto: AusenciaDTO):
+    return srv_excepciones.reportar_ausencia(
+        folio_orden, dto.integrante_ausente, dto.motivo, dto.integrante_reemplazo
+    )
+
+@app.post("/api/ordenes/{folio_orden}/acceso-denegado", tags=["3. Ejecución"])
+def acceso_denegado_endpoint(folio_orden: str):
+    orden = srv_excepciones.registrar_acceso_denegado(folio_orden, "evidencia_acceso_denegado.jpg")
+    return {"folio_orden": orden.folio, "estado": orden.estado.value, "cargo": orden.monto_facturable.valor}
+
+@app.post("/api/ordenes/{folio_orden}/cancelar", tags=["3. Ejecución"])
+def cancelar_orden_endpoint(folio_orden: str):
+    orden = repo.ordenes[folio_orden]
+    fecha_ref = (orden.fecha_inicio_programada - timedelta(hours=12)) if orden.fecha_inicio_programada else datetime.utcnow()
+    return srv_excepciones.cancelar_o_reprogramar(folio_orden, fecha_solicitud=fecha_ref)
 
 @app.get("/api/administracion/kpis", tags=["4. Administración y Reportes"])
 def obtener_kpis_gerencia():
