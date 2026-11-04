@@ -52,3 +52,20 @@ Este documento registra las decisiones arquitectónicas y técnicas tomadas por 
 * **Consecuencias:**
   * **Positivas:** Cumplimiento estricto del principio Abierto/Cerrado (OCP) y de *12-Factor App*; facilidad para probar cada regla de negocio en aislamiento con valores límite (*boundary testing*).
   * **Negativas:** Incremento moderado en la cantidad de clases dentro de la capa de dominio.
+
+  ---
+
+## ADR-004: Stack Tecnológico (Python 3.11 + FastAPI + Pytest + Docker Compose)
+
+* **Estado:** Aceptado
+* **Fecha:** 28 de octubre de 2026
+* **Contexto:**  
+  El PIA requiere una API REST funcional con especificación OpenAPI/Swagger UI activa en producción, una suite de pruebas automatizadas (unitarias y de integración) con cobertura mínima del 80%, un pipeline CI/CD en GitHub Actions y un entorno contenerizado reproducible con Docker Compose (`DB + App + Tests`).
+* **Decisión:**  
+  Utilizar **Python 3.11** con **FastAPI** para la capa REST y generación automática de OpenAPI 3.0 (`/docs`), **SQLAlchemy / Repositorio desacoplado** para persistencia, **Pytest + pytest-cov** para la suite de pruebas y **Docker Compose** orquestando PostgreSQL 15, el contenedor de la aplicación y el contenedor de pruebas.
+* **Alternativas Consideradas:**
+  1. *Express.js (Node.js):* Se descartó porque la generación y mantenimiento de esquemas OpenAPI/Swagger requiere configuración manual adicional propensa a desincronizarse del código.
+  2. *Spring Boot (Java):* Se descartó por tiempos de compilación más lentos en CI/CD y mayor consumo de memoria RAM en plataformas gratuitas de despliegue en la nube (Render / Railway / Fly.io).
+* **Consecuencias:**
+  * **Positivas:** Documentación interactiva Swagger UI generada directamente desde los DTOs de Pydantic; ejecución completa de la suite de pruebas con más del 90% de cobertura en menos de 2 segundos; despliegue inmediato mediante `Dockerfile` ligero (`python:3.11-slim`).
+  * **Negativas:** Requiere validación estricta de tipos con Pydantic y `dataclasses` para mantener la seguridad de tipos en tiempo de ejecución.
