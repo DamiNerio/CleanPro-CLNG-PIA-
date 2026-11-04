@@ -13,7 +13,7 @@ info:
 servers:
   - url: http://localhost:8000
     description: Servidor de desarrollo local / Docker Compose
-  - url: https://cleanpro-pia-clng.onrender.com
+  - url: https://cleanpro-bjr6.onrender.com
     description: Servidor de producción (Demo en vivo)
 
 tags:
