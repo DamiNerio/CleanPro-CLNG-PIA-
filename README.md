@@ -5,7 +5,7 @@
 ![FastAPI](https://img.shields.io/badge/OpenAPI-Swagger_UI-009688?logo=fastapi&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
-Solución integral de software basada en **Domain-Driven Design (DDD)**, patrón **Specification**, **State Machine** y **API REST documentada con OpenAPI/Swagger** para el **Caso de Negocio 12: CleanPro** (Servicios de limpieza residencial y empresarial).
+Solución integral de software basada en **Domain-Driven Design (DDD)**, patrón **Specification**, **State Machine**, **portales web diferenciados por rol** y **API REST documentada con OpenAPI/Swagger** para el **Caso de Negocio 12: CleanPro** (Servicios de limpieza residencial y empresarial).
 
 ---
 
@@ -27,6 +27,9 @@ Solución integral de software basada en **Domain-Driven Design (DDD)**, patrón
 ## Enlaces Oficiales de Entrega
 
 * **Repositorio GitHub:** `https://github.com/DamiNerio/cleanpro-CLNG-PIA-` 
+* **Portal Público del Cliente (Producción Render):** `https://cleanpro-bjr6.onrender.com/` *(o el subdominio asignado por Render a tu servicio `CleanPro`)*
+* **Intranet Operativa y Administrativa (Personal CleanPro):** `https://cleanpro-bjr6.onrender.com/admin`
+* **Swagger UI / OpenAPI Activo en Producción:** `https://cleanpro-bjr6.onrender.com/docs`
 
 ## Configuración por Variables de Entorno (12-Factor App)
 
