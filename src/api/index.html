@@ -3,268 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CleanPro | Portal de Gestión de Servicios de Limpieza</title>
+  <title>CleanPro | Servicios de Limpieza Residencial y Empresarial</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen font-sans">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-  <!-- Barra Superior -->
-  <header class="bg-blue-900 text-white shadow-md">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+  <!-- Encabezado Comercial Público -->
+  <header class="bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
       <div class="flex items-center gap-3">
-        <div class="bg-emerald-400 text-blue-950 font-extrabold px-3 py-1.5 rounded-lg text-lg">CP</div>
+        <div class="bg-emerald-500 text-white font-extrabold px-3 py-1.5 rounded-lg text-lg shadow-sm">CP</div>
         <div>
-          <h1 class="text-xl font-bold tracking-tight">CleanPro — Sistema Integral de Limpieza</h1>
-          <p class="text-xs text-blue-200">Cotización, Programación, Supervisión en Sitio y Administración</p>
+          <h1 class="text-xl font-bold text-slate-900">CleanPro</h1>
+          <p class="text-xs text-slate-500">Limpieza Profesional Residencial y Empresarial</p>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        <button onclick="cargarEstado()" class="bg-blue-800 hover:bg-blue-700 text-sm px-4 py-2 rounded-lg border border-blue-600 transition">
-          Actualizar Datos
-        </button>
-        <a href="/docs" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded-lg text-slate-300 border border-slate-600 transition">
-          Vista Técnica (Swagger API)
-        </a>
-      </div>
+      <button onclick="cargarMisDatos()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-300 transition">
+        Actualizar mis solicitudes
+      </button>
     </div>
   </header>
 
-  <!-- Alerta de Notificaciones Amigables -->
-  <div id="notificacion" class="hidden max-w-7xl mx-auto mt-4 px-6">
+  <!-- Notificaciones para el Cliente -->
+  <div id="notificacion" class="hidden max-w-6xl w-full mx-auto mt-4 px-6">
     <div id="notificacion-caja" class="p-4 rounded-xl shadow-sm border flex justify-between items-center">
       <span id="notificacion-texto" class="font-medium text-sm"></span>
       <button onclick="cerrarNotificacion()" class="text-sm font-bold px-2">&times;</button>
     </div>
   </div>
 
-  <!-- Tarjetas de Resumen (KPIs en vivo) -->
-  <section class="max-w-7xl mx-auto px-6 mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-      <p class="text-xs uppercase font-bold text-slate-400">Cotizaciones Registradas</p>
-      <p id="kpi-cotizaciones" class="text-3xl font-extrabold text-blue-900 mt-1">0</p>
-    </div>
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-      <p class="text-xs uppercase font-bold text-slate-400">Órdenes de Servicio</p>
-      <p id="kpi-ordenes" class="text-3xl font-extrabold text-emerald-600 mt-1">0</p>
-    </div>
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-      <p class="text-xs uppercase font-bold text-slate-400">Pendientes por Facturar</p>
-      <p id="kpi-facturas" class="text-3xl font-extrabold text-amber-600 mt-1">0</p>
-    </div>
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-      <p class="text-xs uppercase font-bold text-slate-400">Avisos a Nómina (Personal)</p>
-      <p id="kpi-nomina" class="text-3xl font-extrabold text-purple-700 mt-1">0</p>
-    </div>
-  </section>
+  <!-- Contenido exclusivo del Cliente -->
+  <main class="max-w-6xl w-full mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8 flex-grow">
 
-  <!-- Pestañas por Rol del Negocio -->
-  <nav class="max-w-7xl mx-auto px-6 mt-6">
-    <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
-      <button onclick="cambiarTab('cliente')" id="tab-btn-cliente" class="tab-btn bg-blue-900 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition">
-        1. Portal del Cliente
-      </button>
-      <button onclick="cambiarTab('coordinador')" id="tab-btn-coordinador" class="tab-btn bg-white text-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-lg text-sm font-semibold border border-slate-200 transition">
-        2. Coordinador (Descuentos y Agenda)
-      </button>
-      <button onclick="cambiarTab('supervisor')" id="tab-btn-supervisor" class="tab-btn bg-white text-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-lg text-sm font-semibold border border-slate-200 transition">
-        3. Supervisor y Cuadrilla en Sitio
-      </button>
-      <button onclick="cambiarTab('gerencia')" id="tab-btn-gerencia" class="tab-btn bg-white text-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-lg text-sm font-semibold border border-slate-200 transition">
-        4. Gerencia y Administración
-      </button>
-    </div>
-  </nav>
+    <!-- Columna Izquierda: Formulario de Solicitud de Cotización (US-01) -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
+      <h2 class="text-lg font-bold text-slate-900 mb-1">Solicitar Cotización en Línea</h2>
+      <p class="text-xs text-slate-500 mb-5">Compártanos las características de su inmueble para recibir su propuesta al instante.</p>
 
-  <!-- Contenido Principal -->
-  <main class="max-w-7xl mx-auto px-6 py-6">
-
-    <!-- PESTAÑA 1: CLIENTE -->
-    <div id="tab-cliente" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-blue-950 mb-1">Solicitar Cotización en Línea</h2>
-        <p class="text-xs text-slate-500 mb-4">Complete los datos de su inmueble para calcular personal, tiempo y costo al instante.</p>
-
-        <form onsubmit="crearCotizacion(event)" class="space-y-3">
+      <form onsubmit="crearCotizacion(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700">Nombre completo o Empresa *</label>
+          <input id="cli-nombre" type="text" required placeholder="Ej. Empresa Alfa S.A." class="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700">Teléfono o Correo de Contacto *</label>
+          <input id="cli-contacto" type="text" required placeholder="Ej. 8112345678 / cliente@correo.com" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700">Dirección del Inmueble *</label>
+          <input id="cli-ubicacion" type="text" required placeholder="Ej. Av. Universidad 450, San Nicolás" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-700">Nombre o Empresa *</label>
-            <input id="cli-nombre" type="text" required placeholder="Ej. Empresa Alfa S.A." class="w-full mt-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700">Teléfono o Correo de Contacto *</label>
-            <input id="cli-contacto" type="text" required placeholder="Ej. 8112345678 / contacto@empresa.com" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700">Dirección / Ubicación del Inmueble *</label>
-            <input id="cli-ubicacion" type="text" required placeholder="Ej. Av. Universidad 450, San Nicolás" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700">Tipo de Inmueble *</label>
-              <select id="cli-tipo" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white">
-                <option value="casa">Casa habitación</option>
-                <option value="oficina">Oficina corporativa</option>
-                <option value="comercio">Local comercial</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700">Tamaño (m²) *</label>
-              <input id="cli-m2" type="number" step="1" min="1" required placeholder="Ej. 240" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700">Frecuencia del Servicio *</label>
-            <select id="cli-frecuencia" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white">
-              <option value="unica">Servicio único</option>
-              <option value="semanal">Contrato semanal</option>
-              <option value="quincenal">Contrato quincenal</option>
-              <option value="mensual">Contrato mensual</option>
+            <label class="block text-xs font-semibold text-slate-700">Tipo de Inmueble *</label>
+            <select id="cli-tipo" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+              <option value="casa">Casa habitación</option>
+              <option value="oficina">Oficina corporativa</option>
+              <option value="comercio">Local comercial</option>
             </select>
           </div>
-          <div class="pt-1">
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Servicios Adicionales (Extras)</label>
-            <label class="flex items-center gap-2 text-xs text-slate-600 mb-1">
-              <input type="checkbox" id="extra-vidrios" class="rounded" /> Limpieza profunda de vidrios (+1 hora | +$450 MXN)
-            </label>
-            <label class="flex items-center gap-2 text-xs text-slate-600">
-              <input type="checkbox" id="extra-alfombra" class="rounded" /> Lavado de alfombras y tapicería (+2 horas | +$800 MXN)
-            </label>
-          </div>
-          <button type="submit" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-semibold py-2.5 rounded-lg text-sm transition mt-2">
-            Generar Cotización Automática
-          </button>
-        </form>
-      </div>
-
-      <!-- Mis Cotizaciones y Servicios para Aceptar / Firmar -->
-      <div class="lg:col-span-2 space-y-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-base font-bold text-slate-800 mb-3">Mis Cotizaciones (Aceptar Propuesta)</h3>
-          <div id="lista-cotizaciones-cliente" class="space-y-3 text-sm text-slate-600"></div>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-base font-bold text-slate-800 mb-3">Mis Servicios Programados (Firma de Conformidad o Cancelación)</h3>
-          <div id="lista-ordenes-cliente" class="space-y-3 text-sm text-slate-600"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PESTAÑA 2: COORDINADOR -->
-    <div id="tab-coordinador" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-blue-950 mb-1">Aplicar Descuento Comercial</h2>
-        <p class="text-xs text-slate-500 mb-4">Política RN-01: El coordinador autoriza hasta 10%. Un porcentaje mayor enviará alerta automática a Gerencia.</p>
-        <form onsubmit="aplicarDescuentoUI(event)" class="space-y-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-700">Seleccionar Cotización</label>
-            <select id="coord-folio-cot" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white"></select>
+            <label class="block text-xs font-semibold text-slate-700">Superficie aprox. (m²) *</label>
+            <input id="cli-m2" type="number" step="1" min="1" required placeholder="Ej. 180" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm" />
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700">Porcentaje de Descuento (%)</label>
-              <input id="coord-descuento" type="number" min="1" max="50" required placeholder="Ej. 8 o 15" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700">Motivo del Descuento</label>
-              <input id="coord-motivo" type="text" value="Contrato de frecuencia" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
-            </div>
-          </div>
-          <button type="submit" class="w-full bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-2.5 rounded-lg text-sm transition">
-            Aplicar Descuento a Cotización
-          </button>
-        </form>
-      </div>
-
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-blue-950 mb-1">Programar Fecha y Asignar Cuadrilla</h2>
-        <p class="text-xs text-slate-500 mb-4">Política CA-06.3: El sistema verifica automáticamente que la cuadrilla no tenga otro servicio traslapado.</p>
-        <form onsubmit="programarOrdenUI(event)" class="space-y-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700">Orden de Servicio (Cotización Aceptada)</label>
-            <select id="coord-folio-orden" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white"></select>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700">Fecha y Hora de Inicio</label>
-              <input id="coord-fecha" type="datetime-local" required value="2026-11-20T09:00" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700">Cuadrilla Disponible</label>
-              <select id="coord-cuadrilla" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white">
-                <option value="C-03">Cuadrilla C-03 (J. Ramírez, M. López)</option>
-                <option value="C-05">Cuadrilla C-05 (A. Garza, P. Sánchez)</option>
-                <option value="C-07">Cuadrilla C-07 (R. Treviño, L. Morales)</option>
-              </select>
-            </div>
-          </div>
-          <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm transition">
-            Agendar Servicio y Asignar Cuadrilla
-          </button>
-        </form>
-      </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700">Frecuencia deseada *</label>
+          <select id="cli-frecuencia" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+            <option value="unica">Servicio único</option>
+            <option value="semanal">Semanal</option>
+            <option value="quincenal">Quincenal</option>
+            <option value="mensual">Mensual</option>
+          </select>
+        </div>
+        <div class="pt-1">
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Servicios Adicionales (Extras)</label>
+          <label class="flex items-center gap-2 text-xs text-slate-600 mb-1.5 cursor-pointer">
+            <input type="checkbox" id="extra-vidrios" class="rounded text-emerald-600" /> Limpieza profunda de vidrios (+$450 MXN)
+          </label>
+          <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+            <input type="checkbox" id="extra-alfombra" class="rounded text-emerald-600" /> Lavado de alfombras y tapicería (+$800 MXN)
+          </label>
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg text-sm shadow-sm transition mt-2">
+          Solicitar Cotización
+        </button>
+      </form>
     </div>
 
-    <!-- PESTAÑA 3: SUPERVISOR EN SITIO -->
-    <div id="tab-supervisor" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-blue-950 mb-3">Agenda Operativa del Día (Ejecución en Sitio)</h2>
-        <div id="lista-ordenes-supervisor" class="space-y-3 text-sm"></div>
+    <!-- Columna Derecha: Mis Cotizaciones y Mis Servicios Programados -->
+    <div class="lg:col-span-2 space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h3 class="text-base font-bold text-slate-900 mb-1">1. Mis Cotizaciones</h3>
+        <p class="text-xs text-slate-500 mb-4">Revise el importe cotizado y confirme su aceptación para programar el servicio.</p>
+        <div id="lista-cotizaciones-cliente" class="space-y-3 text-sm text-slate-600"></div>
       </div>
 
-      <div class="space-y-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-base font-bold text-slate-800 mb-1">Reportar Incidencia con Evidencia Fotográfica (US-10)</h3>
-          <p class="text-xs text-slate-500 mb-3">Registra daños o hallazgos en sitio sin usar hojas de papel.</p>
-          <form onsubmit="registrarIncidenciaUI(event)" class="space-y-3">
-            <select id="sup-folio-inc" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white"></select>
-            <input id="sup-tipo-inc" type="text" required placeholder="Tipo (Ej. Daño en mobiliario / Vidrio roto)" class="w-full px-3 py-2 border rounded-lg text-sm" />
-            <input id="sup-desc-inc" type="text" required placeholder="Descripción detallada de lo ocurrido" class="w-full px-3 py-2 border rounded-lg text-sm" />
-            <input id="sup-foto-inc" type="text" required value="evidencia_sitio_01.jpg" placeholder="Archivo o enlace de fotografía" class="w-full px-3 py-2 border rounded-lg text-sm" />
-            <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 rounded-lg text-sm transition">
-              Guardar Incidencia con Evidencia
-            </button>
-          </form>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-base font-bold text-slate-800 mb-1">Reportar Ausencia de Personal a Nómina (US-12 / US-17)</h3>
-          <p class="text-xs text-slate-500 mb-3">Envía el cambio directo a Administración sin depender de mensajes de WhatsApp.</p>
-          <form onsubmit="reportarAusenciaUI(event)" class="space-y-3">
-            <select id="sup-folio-aus" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white"></select>
-            <div class="grid grid-cols-2 gap-2">
-              <input id="sup-ausente" type="text" required placeholder="Integrante ausente (Ej. J. Ramírez)" class="w-full px-3 py-2 border rounded-lg text-sm" />
-              <input id="sup-reemplazo" type="text" placeholder="Reemplazo (opcional)" class="w-full px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <input id="sup-motivo-aus" type="text" required placeholder="Motivo (Ej. Incapacidad médica)" class="w-full px-3 py-2 border rounded-lg text-sm" />
-            <button type="submit" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg text-sm transition">
-              Notificar Cambio de Personal a Administración
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- PESTAÑA 4: GERENCIA Y ADMINISTRACIÓN -->
-    <div id="tab-gerencia" class="hidden space-y-6">
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-bold text-blue-950 mb-1">Autorizaciones de Gerencia (Lic. Renata Cárdenas)</h2>
-        <p class="text-xs text-slate-500 mb-4">Cotizaciones bloqueadas por descuento mayor al 10% (RN-01) o por superar 300 m² / $8,000 MXN (RN-02).</p>
-        <div id="lista-autorizaciones-gerencia" class="space-y-3 text-sm"></div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-base font-bold text-slate-800 mb-3">Control de Facturación Vinculada (RN-09 / US-18)</h3>
-          <div id="lista-facturacion" class="space-y-2 text-sm"></div>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-base font-bold text-slate-800 mb-3">Tablero de Cambios de Personal para Nómina (US-17)</h3>
-          <div id="lista-nomina" class="space-y-2 text-sm"></div>
-        </div>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h3 class="text-base font-bold text-slate-900 mb-1">2. Seguimiento de Mis Servicios y Firma de Conformidad</h3>
+        <p class="text-xs text-slate-500 mb-4">Consulte el estado de su servicio agendado o firme digitalmente al concluir la visita.</p>
+        <div id="lista-ordenes-cliente" class="space-y-3 text-sm text-slate-600"></div>
       </div>
     </div>
 
   </main>
+
+  <!-- Pie de página con acceso separado para personal interno -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-8">
+    <div class="max-w-6xl mx-auto px-6 flex justify-between items-center text-xs text-slate-400">
+      <span>&copy; 2026 CleanPro Servicios de Limpieza. Todos los derechos reservados.</span>
+      <a href="/admin" class="text-slate-400 hover:text-slate-600 underline">Acceso Corporativo (Personal CleanPro)</a>
+    </div>
+  </footer>
 
   <script>
     function mostrarNotificacion(mensaje, exito = true) {
@@ -274,7 +124,7 @@
       cont.classList.remove('hidden');
       caja.className = exito
         ? 'p-4 rounded-xl shadow-sm border bg-emerald-50 border-emerald-300 text-emerald-900 flex justify-between items-center'
-        : 'p-4 rounded-xl shadow-sm border bg-red-50 border-red-300 text-red-900 flex justify-between items-center';
+        : 'p-4 rounded-xl shadow-sm border bg-amber-50 border-amber-300 text-amber-900 flex justify-between items-center';
       txt.textContent = mensaje;
     }
 
@@ -282,120 +132,56 @@
       document.getElementById('notificacion').classList.add('hidden');
     }
 
-    function cambiarTab(tab) {
-      ['cliente', 'coordinador', 'supervisor', 'gerencia'].forEach(t => {
-        document.getElementById('tab-' + t).classList.add('hidden');
-        const btn = document.getElementById('tab-btn-' + t);
-        btn.className = 'tab-btn bg-white text-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-lg text-sm font-semibold border border-slate-200 transition';
-      });
-      document.getElementById('tab-' + tab).classList.remove('hidden');
-      document.getElementById('tab-btn-' + tab).className = 'tab-btn bg-blue-900 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition';
-    }
-
-    async function cargarEstado() {
+    async function cargarMisDatos() {
       const res = await fetch('/api/estado');
       const data = await res.json();
 
-      document.getElementById('kpi-cotizaciones').textContent = data.kpis.total_cotizaciones;
-      document.getElementById('kpi-ordenes').textContent = data.kpis.total_ordenes;
-      document.getElementById('kpi-facturas').textContent = data.kpis.servicios_pendientes_facturar;
-      document.getElementById('kpi-nomina').textContent = data.kpis.cambios_personal_registrados;
-
-      // Poblar selects
-      const optsCot = data.cotizaciones.map(c => `<option value="${c.folio}">${c.folio} - ${c.cliente} ($${c.total} | ${c.estado})</option>`).join('');
-      document.getElementById('coord-folio-cot').innerHTML = optsCot || '<option value="">Sin cotizaciones</option>';
-
-      const optsOrd = data.ordenes.map(o => `<option value="${o.folio}">${o.folio} - ${o.cliente} (${o.estado})</option>`).join('');
-      ['coord-folio-orden', 'sup-folio-inc', 'sup-folio-aus'].forEach(id => {
-        document.getElementById(id).innerHTML = optsOrd || '<option value="">Sin órdenes activas</option>';
-      });
-
-      // Lista de cotizaciones en pestaña Cliente
       const divCotCli = document.getElementById('lista-cotizaciones-cliente');
       divCotCli.innerHTML = data.cotizaciones.length === 0
-        ? '<p class="text-slate-400">Aún no hay cotizaciones registradas. Llame el formulario de la izquierda para comenzar.</p>'
-        : data.cotizaciones.map(c => `
-          <div class="p-4 rounded-lg border border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50">
-            <div>
-              <span class="font-bold text-blue-950">${c.folio}</span> — <span class="font-semibold">${c.cliente}</span>
-              <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">${c.estado}</span>
-              <p class="text-xs text-slate-500 mt-1">Inmueble: ${c.superficie_m2} m² | Personal estimado: ${c.personal_sugerido} personas (${c.horas_sugeridas} hrs-persona) | Descuento: ${c.descuento}%</p>
-            </div>
-            <div class="flex items-center gap-3">
-              <span class="text-lg font-extrabold text-slate-900">$${c.total} MXN</span>
-              ${c.estado !== 'Aceptada' ? `<button onclick="aceptarCotizacionUI('${c.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Aceptar Cotización</button>` : '<span class="text-xs font-bold text-emerald-700">Orden Creada</span>'}
-            </div>
-          </div>
-        `).join('');
+        ? '<p class="text-slate-400 py-2">No tiene cotizaciones registradas todavía. Complete el formulario para generar una.</p>'
+        : data.cotizaciones.map(c => {
+            const enRevision = c.estado === 'Pendiente de autorización';
+            return `
+              <div class="p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50">
+                <div>
+                  <span class="font-bold text-slate-900">Folio ${c.folio}</span> — <span class="font-medium">${c.cliente}</span>
+                  <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${enRevision ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${enRevision ? 'En revisión comercial' : c.estado}
+                  </span>
+                  <p class="text-xs text-slate-500 mt-1">Superficie: ${c.superficie_m2} m² ${c.descuento > 0 ? `| Descuento aplicado: ${c.descuento}%` : ''}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-lg font-extrabold text-slate-900">$${c.total} MXN</span>
+                  ${c.estado === 'Aceptada'
+                    ? '<span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">Servicio Solicitado</span>'
+                    : enRevision
+                      ? '<span class="text-xs text-amber-700 font-medium">Validando descuento / dimensión</span>'
+                      : `<button onclick="aceptarCotizacionUI('${c.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition">Aceptar Propuesta</button>`
+                  }
+                </div>
+              </div>
+            `;
+          }).join('');
 
-      // Lista de órdenes en pestaña Cliente
       const divOrdCli = document.getElementById('lista-ordenes-cliente');
       divOrdCli.innerHTML = data.ordenes.length === 0
-        ? '<p class="text-slate-400">Cuando acepte una cotización, su Orden de Servicio aparecerá aquí.</p>'
+        ? '<p class="text-slate-400 py-2">Aún no cuenta con servicios en curso.</p>'
         : data.ordenes.map(o => `
-          <div class="p-4 rounded-lg border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+          <div class="p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-3">
             <div>
-              <span class="font-bold text-emerald-900">${o.folio}</span> — ${o.cliente}
-              <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">${o.estado}</span>
-              <p class="text-xs text-slate-500 mt-1">Cuadrilla: ${o.cuadrilla || 'Por asignar'} | Total: $${o.precio_total} MXN | Incidencias: ${o.incidencias}</p>
+              <span class="font-bold text-slate-900">Orden ${o.folio}</span> — ${o.cliente}
+              <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">${o.estado}</span>
+              <p class="text-xs text-slate-500 mt-1">Importe total: $${o.precio_total} MXN | Estado de cuadrilla: ${o.cuadrilla ? 'Equipo asignado' : 'En programación'}</p>
             </div>
             <div class="flex flex-wrap gap-2">
-              ${o.estado === 'En ejecución' ? `<button onclick="cerrarServicioUI('${o.folio}')" class="bg-blue-900 hover:bg-blue-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Firmar de Conformidad</button>` : ''}
-              ${o.estado === 'Programada' ? `<button onclick="cancelarOrdenUI('${o.folio}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Cancelar Servicio (<24h cobra 50%)</button>` : ''}
-            </div>
-          </div>
-        `).join('');
-
-      // Lista de órdenes para Supervisor
-      const divSup = document.getElementById('lista-ordenes-supervisor');
-      divSup.innerHTML = data.ordenes.length === 0
-        ? '<p class="text-slate-400">No hay órdenes de servicio generadas.</p>'
-        : data.ordenes.map(o => `
-          <div class="p-4 rounded-lg border border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-3">
-            <div>
-              <span class="font-bold">${o.folio}</span> — ${o.cliente} (${o.superficie_m2} m²)
-              <p class="text-xs text-slate-500">Estado: <b>${o.estado}</b> | Cuadrilla: <b>${o.cuadrilla || 'Sin asignar'}</b></p>
-            </div>
-            <div class="flex gap-2">
+              ${o.estado === 'En ejecución' ? `
+                <button onclick="cerrarServicioUI('${o.folio}', true)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold">Firmar de Conformidad</button>
+                <button onclick="cerrarServicioUI('${o.folio}', false)" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold">Reportar Inconformidad</button>
+              ` : ''}
               ${o.estado === 'Programada' ? `
-                <button onclick="iniciarServicioUI('${o.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Registrar Inicio</button>
-                <button onclick="accesoDenegadoUI('${o.folio}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Acceso Denegado (Cargo 100%)</button>
+                <button onclick="cancelarOrdenUI('${o.folio}')" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-semibold">Cancelar Cita</button>
               ` : ''}
             </div>
-          </div>
-        `).join('');
-
-      // Lista Autorizaciones Gerencia
-      const pendientes = data.cotizaciones.filter(c => c.estado === 'Pendiente de autorización');
-      document.getElementById('lista-autorizaciones-gerencia').innerHTML = pendientes.length === 0
-        ? '<p class="text-slate-400">No hay cotizaciones pendientes de visto bueno de gerencia.</p>'
-        : pendientes.map(c => `
-          <div class="p-4 rounded-lg border border-amber-300 bg-amber-50 flex justify-between items-center">
-            <div>
-              <span class="font-bold text-amber-950">${c.folio}</span> — ${c.cliente} | Superficie: ${c.superficie_m2} m² | Descuento solicitado: <b>${c.descuento}%</b> | Total: <b>$${c.total} MXN</b>
-            </div>
-            <button onclick="autorizarGerenciaUI('${c.folio}')" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold">
-              Autorizar como Gerencia
-            </button>
-          </div>
-        `).join('');
-
-      // Facturación y Nómina
-      document.getElementById('lista-facturacion').innerHTML = data.facturables.length === 0
-        ? '<p class="text-slate-400">Sin registros facturables generados aún.</p>'
-        : data.facturables.map(f => `
-          <div class="p-3 rounded-lg border border-slate-200 flex justify-between items-center">
-            <div><b>${f.folio_orden}</b> — ${f.cliente}<p class="text-xs text-slate-500">${f.motivo}</p></div>
-            <span class="font-bold text-emerald-700">$${f.monto} MXN</span>
-          </div>
-        `).join('');
-
-      document.getElementById('lista-nomina').innerHTML = data.cambios_personal.length === 0
-        ? '<p class="text-slate-400">Sin ausencias ni sustituciones reportadas hoy.</p>'
-        : data.cambios_personal.map(n => `
-          <div class="p-3 rounded-lg border border-slate-200">
-            <b>${n.id} (${n.folio_orden})</b>: Saliente: <span class="text-red-600">${n.integrante_saliente}</span> &rarr; Entrante: <span class="text-emerald-700 font-semibold">${n.integrante_entrante}</span>
-            <p class="text-xs text-slate-500">Motivo: ${n.motivo}</p>
           </div>
         `).join('');
     }
@@ -422,9 +208,9 @@
       });
       const data = await res.json();
       if (res.ok) {
-        mostrarNotificacion(`Cotización ${data.folio} creada. Total: $${data.total} MXN (${data.personal_sugerido} personas sugeridas).`);
+        mostrarNotificacion(`Su cotización con folio ${data.folio} ha sido generada por $${data.total} MXN.`);
         e.target.reset();
-        cargarEstado();
+        cargarMisDatos();
       } else {
         mostrarNotificacion(data.detail, false);
       }
@@ -434,149 +220,46 @@
       const res = await fetch(`/api/cotizaciones/${folio}/aceptar`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        mostrarNotificacion(`Cotización aceptada. Se generó automáticamente la Orden de Servicio ${data.folio_orden}.`);
-        cargarEstado();
+        mostrarNotificacion(`Gracias por su preferencia. Se generó su Orden de Servicio ${data.folio_orden}.`);
+        cargarMisDatos();
       } else {
         mostrarNotificacion(data.detail, false);
       }
     }
 
-    async function aplicarDescuentoUI(e) {
-      e.preventDefault();
-      const folio = document.getElementById('coord-folio-cot').value;
-      const res = await fetch(`/api/cotizaciones/${folio}/descuento`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          porcentaje: parseFloat(document.getElementById('coord-descuento').value),
-          rol: 'coordinador',
-          usuario: 'Coordinador CleanPro',
-          motivo: document.getElementById('coord-motivo').value
-        })
-      });
-      const data = await res.json();
-      cargarEstado();
-      if (res.ok) {
-        mostrarNotificacion(`Descuento aplicado a ${folio}. Nuevo total: $${data.total} MXN.`);
-      } else {
-        mostrarNotificacion(`Regla de Negocio RN-01: ${data.detail} (Enviada a la pestaña de Gerencia para autorización).`, false);
-      }
-    }
-
-    async function autorizarGerenciaUI(folio) {
-      const res = await fetch(`/api/cotizaciones/${folio}/autorizar`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        mostrarNotificacion(`Cotización ${folio} autorizada por Gerencia (Lic. Renata Cárdenas). El cliente ya puede aceptarla.`);
-        cargarEstado();
-      } else {
-        mostrarNotificacion(data.detail, false);
-      }
-    }
-
-    async function programarOrdenUI(e) {
-      e.preventDefault();
-      const folio = document.getElementById('coord-folio-orden').value;
-      const fecha = document.getElementById('coord-fecha').value + ':00';
-      const cuadrilla = document.getElementById('coord-cuadrilla').value;
-      const res = await fetch(`/api/ordenes/${folio}/programar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fecha_inicio_iso: fecha, id_cuadrilla: cuadrilla })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        mostrarNotificacion(`Orden ${folio} agendada exitosamente con la cuadrilla ${data.cuadrilla}.`);
-        cargarEstado();
-      } else {
-        mostrarNotificacion(`Conflicto de Horario: ${data.detail}`, false);
-      }
-    }
-
-    async function iniciarServicioUI(folio) {
-      const res = await fetch(`/api/ordenes/${folio}/iniciar`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        mostrarNotificacion(`Servicio ${folio} iniciado en sitio con hora oficial del sistema.`);
-        cargarEstado();
-      } else {
-        mostrarNotificacion(data.detail, false);
-      }
-    }
-
-    async function registrarIncidenciaUI(e) {
-      e.preventDefault();
-      const folio = document.getElementById('sup-folio-inc').value;
-      const res = await fetch(`/api/ordenes/${folio}/incidencias`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: document.getElementById('sup-tipo-inc').value,
-          descripcion: document.getElementById('sup-desc-inc').value,
-          fotos: [document.getElementById('sup-foto-inc').value]
-        })
-      });
-      if (res.ok) {
-        mostrarNotificacion(`Incidencia documentada con evidencia fotográfica en la orden ${folio}.`);
-        e.target.reset();
-        cargarEstado();
-      }
-    }
-
-    async function cerrarServicioUI(folio) {
-      const firmante = prompt('Ingrese el nombre completo de quien firma de conformidad:', 'Ing. Roberto Garza');
+    async function cerrarServicioUI(folio, conforme) {
+      const firmante = prompt('Ingrese su nombre completo para registrar su firma digital:', 'Cliente CleanPro');
       if (!firmante) return;
+      let motivo = '';
+      if (!conforme) {
+        motivo = prompt('Por favor indique el motivo de su inconformidad:', 'Faltó detallar ventanas');
+        if (!motivo) return;
+      }
       const res = await fetch(`/api/ordenes/${folio}/cerrar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre_firmante: firmante, conformidad: true, motivo_inconformidad: '' })
+        body: JSON.stringify({ nombre_firmante: firmante, conformidad: conforme, motivo_inconformidad: motivo })
       });
       const data = await res.json();
       if (res.ok) {
-        mostrarNotificacion(`Servicio ${folio} cerrado con firma digital. Se generó registro facturable por $${data.monto_facturable} MXN.`);
-        cargarEstado();
+        mostrarNotificacion(`Su firma digital ha sido registrada en el servicio ${folio}. ¡Gracias!`);
+        cargarMisDatos();
       } else {
         mostrarNotificacion(data.detail, false);
-      }
-    }
-
-    async function reportarAusenciaUI(e) {
-      e.preventDefault();
-      const folio = document.getElementById('sup-folio-aus').value;
-      const res = await fetch(`/api/ordenes/${folio}/ausencia`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          integrante_ausente: document.getElementById('sup-ausente').value,
-          integrante_reemplazo: document.getElementById('sup-reemplazo').value || null,
-          motivo: document.getElementById('sup-motivo-aus').value
-        })
-      });
-      if (res.ok) {
-        mostrarNotificacion(`Cambio de personal registrado y enviado al tablero de Nómina en Administración.`);
-        e.target.reset();
-        cargarEstado();
-      }
-    }
-
-    async function accesoDenegadoUI(folio) {
-      const res = await fetch(`/api/ordenes/${folio}/acceso-denegado`, { method: 'POST' });
-      if (res.ok) {
-        mostrarNotificacion(`Acceso denegado registrado en ${folio}. Se aplicó penalización del 100% (RN-05) para facturación.`, false);
-        cargarEstado();
       }
     }
 
     async function cancelarOrdenUI(folio) {
+      if (!confirm('Nota: Las cancelaciones con menos de 24 horas de anticipación generan un cargo del 50%. ¿Desea continuar?')) return;
       const res = await fetch(`/api/ordenes/${folio}/cancelar`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        mostrarNotificacion(`Orden ${folio}: ${data.estado}. Cargo aplicado: $${data.cargo} MXN (RN-04).`, false);
-        cargarEstado();
+        mostrarNotificacion(`Su cita ${folio} ha sido cancelada (${data.estado}).`, false);
+        cargarMisDatos();
       }
     }
 
-    cargarEstado();
+    cargarMisDatos();
   </script>
 </body>
 </html>
