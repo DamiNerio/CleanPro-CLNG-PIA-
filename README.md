@@ -1,7 +1,6 @@
 # CleanPro — (PIA CLNG)
 
 ![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)
-![Coverage](https://img.shields.io/badge/Coverage-%3E%3D%2090%25%20(Meta%2080%25)-brightgreen)
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/OpenAPI-Swagger_UI-009688?logo=fastapi&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
