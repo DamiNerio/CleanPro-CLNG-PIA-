@@ -1,7 +1,6 @@
-# Diagramas de Arquitectura, DDD y UML (Docs-as-Code)
+# Diagramas de Arquitectura, DDD y UML 
 
-Este documento concentra los diagramas arquitectónicos del sistema **CleanPro** en formato **Mermaid** (renderizables nativamente en GitHub) y su correspondencia con los archivos interactivos de Draw.io incluidos en el repositorio (`BPMN CleanPro.html`, `diagrama_de_clases_uml.html` y `Diagrama secuencia 1.html`).
-
+Este documento concentra los diagramas arquitectónicos del sistema **CleanPro** en formato **Mermaid** (renderizables nativamente en GitHub).
 ---
 
 ## 1. Diagrama de Clases del Dominio (DDD + Specification + State Machine)
@@ -154,42 +153,44 @@ classDiagram
     Specification <|.. CuadrillaDisponibleSpec
 ```
 
----
-
 ## 2. Diagramas de Máquina de Estados (State Machine Pattern)
 
 ### 2.1 Máquina de Estados de `CotizacionFormal`
-Modela las reglas **RN-01**, **RN-02** y los criterios **CA-03.2**, **CA-04.2**, **CA-05.3** y **CA-05.4**.
+
+Modela las reglas **RN-01**, **RN-02** y los criterios **CA-03.2**, **CA-04.2**, **CA-05.3** y **CA-05.4**, incluyendo la aceptación directa desde el Portal del Cliente cuando la cotización se encuentra dentro de los parámetros automáticos del coordinador.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Borrador : Solicitud recibida (US-01)
+    [*] --> Borrador : Solicitud recibida en Portal Cliente (US-01)
     Borrador --> Pendiente_Autorizacion : Descuento > 10% (RN-01) o > 300m2 / $8,000 (RN-02)
-    Borrador --> Enviada : Dentro de límites del Coordinador
-    Pendiente_Autorizacion --> Autorizada : Gerencia aprueba (US-04)
+    Borrador --> Enviada : Coordinador envía cotización estándar
+    Borrador --> Aceptada : Cliente acepta cotización estándar (<= 10%, <= 300m2)
+    Borrador --> Rechazada : Cliente rechaza
+    Pendiente_Autorizacion --> Autorizada : Gerencia aprueba en /admin (US-04)
     Pendiente_Autorizacion --> Propuesta_Descartada : Gerencia rechaza
     Autorizada --> Enviada : Coordinador envía al cliente
+    Autorizada --> Aceptada : Cliente acepta en Portal / (US-05 -> Genera Orden RN-09)
     Enviada --> Aceptada : Cliente acepta (US-05 -> Genera Orden RN-09)
     Enviada --> Rechazada : Cliente rechaza
-    Autorizada --> Aceptada : Cliente acepta directo
     Propuesta_Descartada --> [*]
     Rechazada --> [*]
     Aceptada --> [*] : Estado inmutable (CA-05.4)
 ```
 
 ### 2.2 Máquina de Estados de `OrdenDeServicio`
+
 Modela las reglas **RN-04**, **RN-05**, **RN-09** y los criterios **CA-06.1**, **CA-09.2**, **CA-10.4**, **CA-11.2**, **CA-13.3**, **CA-16.2** y **CA-18.1**.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Generada : Evento CotizacionAceptada (RN-09)
-    Generada --> Programada : Asignar fecha y cuadrilla sin traslape (US-06, US-07)
+    Generada --> Programada : Asignar fecha y cuadrilla en /admin sin traslape (US-06, US-07)
     Programada --> Programada : Reprogramación >= 24h (US-16, RN-08)
     Programada --> Cancelado_Sin_Cargo : Cancelación >= 24h o Fuerza Mayor (RN-04)
-    Programada --> Cancelado_Con_Cargo : Cancelación < 24h (Cargo 50% RN-04)
-    Programada --> No_Ejecutado_Con_Cargo : Acceso denegado con evidencia (Cargo 100% RN-05)
-    Programada --> En_Ejecucion : Supervisor registra hora de inicio (US-09)
-    En_Ejecucion --> Cerrado_Con_Conformidad : Incidencias completas + Firma conforme (US-10, US-11)
+    Programada --> Cancelado_Con_Cargo : Cancelación < 24h en Portal Cliente (Cargo 50% RN-04)
+    Programada --> No_Ejecutado_Con_Cargo : Acceso denegado en /admin (Cargo 100% RN-05)
+    Programada --> En_Ejecucion : Supervisor registra hora de inicio en /admin (US-09)
+    En_Ejecucion --> Cerrado_Con_Conformidad : Incidencias completas + Firma conforme en Portal / (US-10, US-11)
     En_Ejecucion --> Cerrado_Con_Inconformidad : Firma inconforme con motivo obligatorio (CA-11.3)
     
     Cerrado_Con_Conformidad --> Facturada : Administración vincula factura fiscal (US-18)
@@ -201,33 +202,34 @@ stateDiagram-v2
     Facturada --> [*]
 ```
 
----
-
 ## 3. Diagramas de Secuencia de Casos de Uso Críticos
 
-### 3.1 Secuencia 1: Descuento Mayor al 10% y Autorización de Gerencia (US-03, US-04, RN-01)
+### 3.1 Secuencia 1: Descuento Mayor al 10% en `/admin` y Autorización de Gerencia (US-03, US-04, RN-01)
 
 ```mermaid
 sequenceDiagram
     actor Coordinador
+    participant AdminUI as Intranet (/admin)
     participant SC as ServicioCotizacion
     participant CF as CotizacionFormal
     participant Spec as DescuentoCoordinadorSpec
     actor Gerencia
 
-    Coordinador->>SC: aplicar_descuento(folio="COT-1042", porcentaje=15, rol="coordinador")
+    Coordinador->>AdminUI: Ingresa descuento 15% en COT-1042
+    AdminUI->>SC: PATCH /api/cotizaciones/COT-1042/descuento (15%)
     SC->>CF: aplicar_descuento(15, "coordinador")
     CF->>Spec: is_satisfied_by(15)
     Spec-->>CF: False (Excede límite de 10%)
     CF->>CF: CotizacionStateMachine.transicionar(PENDIENTE_AUTORIZACION)
     CF-->>SC: DomainError("Requiere autorización de gerencia RN-01")
-    SC-->>Coordinador: HTTP 403 - Estado: Pendiente de autorización
+    SC-->>AdminUI: HTTP 403 - Pasa a bandeja de Gerencia
     
-    Gerencia->>SC: autorizar_cotizacion(folio="COT-1042", usuario="Lic. Renata Cárdenas")
+    Gerencia->>AdminUI: Clic en "Aprobar Excepción (Gerencia)"
+    AdminUI->>SC: POST /api/cotizaciones/COT-1042/autorizar
     SC->>CF: autorizar_por_gerencia("Lic. Renata Cárdenas")
     CF->>CF: CotizacionStateMachine.transicionar(AUTORIZADA)
     CF-->>SC: Cotización Autorizada (Total con 15% aplicado)
-    SC-->>Gerencia: HTTP 200 - Estado: Autorizada (Habilitada para envío)
+    SC-->>AdminUI: HTTP 200 - Estado: Autorizada (Habilitada en Portal del Cliente)
 ```
 
 ### 3.2 Secuencia 2: Ajuste de Superficie Mayor en Sitio con Evidencia (US-15, RN-07)
@@ -246,21 +248,22 @@ sequenceDiagram
     OS->>OS: factor = 200 / 150
     OS->>OS: Actualizar superficie (200 m2) y precio_total proporcional
     OS-->>SE: OrdenDeServicio actualizada
-    SE-->>Supervisor: HTTP 200 - Nuevo alcance y precio autorizados
+    SE-->>Supervisor: Nuevo alcance y precio autorizados
 ```
 
-### 3.3 Secuencia 3: Cierre de Servicio con Firma Digital y Vinculación a Facturación (US-10, US-11, US-18, RN-09)
+### 3.3 Secuencia 3: Cierre con Firma Digital en Portal del Cliente (`/`) y Facturación en `/admin` (US-10, US-11, US-18, RN-09)
 
 ```mermaid
 sequenceDiagram
-    actor Supervisor
     actor Cliente
+    participant CliUI as Portal Cliente (/)
     participant SEj as ServicioEjecucion
     participant OS as OrdenDeServicio
     participant Repo as CleanProRepository
     actor Administracion
 
-    Supervisor->>SEj: cerrar_servicio(folio="SRV-2210", firmante="Ing. Garza", conformidad=True)
+    Cliente->>CliUI: Clic en "Firmar de Conformidad" (Nombre: Ing. Garza)
+    CliUI->>SEj: POST /api/ordenes/SRV-2210/cerrar
     SEj->>OS: cerrar_servicio(FirmaConformidad)
     OS->>OS: Verificar hora_inicio_real != None (CA-09.2)
     OS->>OS: Validar que todas las Incidencias tengan descripción y foto (CA-10.4)
@@ -268,22 +271,24 @@ sequenceDiagram
     OS->>OS: Emitir evento ServicioCerrado
     OS-->>SEj: Orden cerrada con monto_facturable
     SEj->>Repo: Crear RegistroFacturable vinculado a "SRV-2210" (RN-09)
-    SEj-->>Cliente: HTTP 200 - Acta Digital firmada
+    SEj-->>CliUI: HTTP 200 - Acta Digital firmada
     
-    Administracion->>Repo: vincular_factura(folio_orden="SRV-2210", folio_factura="FAC-9001")
-    Repo->>OS: OrdenServicioStateMachine.transicionar(FACTURADA)
-    Repo-->>Administracion: Servicio Facturado (0 fugas de facturación)
+    Administracion->>Repo: Consulta /admin (Bandeja de Facturación y KPIs)
+    Repo-->>Administracion: SRV-2210 listado con monto exacto (0 fugas de facturación)
 ```
-
----
 
 ## 4. Trazabilidad del Modelo BPMN (`BPMN CleanPro.html`)
 
 El diagrama BPMN completo del repositorio modela el proceso *Gestión Integral de Limpieza CleanPro (AS-IS Optimizado)* distribuido en **5 Swimlanes (Participantes)** y **6 Data Objects**:
 
-1. **Carril Cliente:** Evento de inicio por mensaje (*Solicitud de cotización Web/WhatsApp/Tel*) -> *Revisar y responder cotización (US-05)* -> Gateway exclusivo de aceptación -> *Autorizar/Rechazar extra o mayor superficie (US-14, US-15)* -> *Firmar conformidad digital (US-11)*.
-2. **Carril Coordinador:** *Capturar datos y sugerir recursos (US-01, US-02)* -> Gateway `¿>10% desc. o >300m2 / $8,000? (RN-01, RN-02)` -> *Emitir y enviar cotización (<4h RN-03)* -> *Programar fecha y asignar cuadrilla (US-06, US-07)* -> Gateway `¿Cancelación previa? (US-16, RN-04)` -> *Cotizar extra o recálculo en sitio (US-14, US-15)*.
-3. **Carril Gerencia (Lic. Renata Cárdenas):** *Evaluar excepción de precio/dimensión (US-04)* -> Gateway de aprobación o descarte de propuesta.
-4. **Carril Supervisor / Cuadrilla:** *Consultar agenda y presentarse en sitio (US-08)* -> *Reportar ausencia y sustitución (US-12)* -> Gateway `¿Permite acceso? (RN-05)` -> *Registrar acceso denegado (US-13)* o *Registrar hora de inicio (US-09)* -> Gateway `¿Extra o mayor superficie? (RN-06, RN-07)` -> *Ejecutar limpieza y documentar incidencias (US-10)* -> *Registrar hora fin y resumen digital (US-09, US-11)*.
-5. **Carril Administración:** *Facturar penalización 50% (RN-04)* / *Facturar penalización 100% (RN-05)* / *Aplicar cambios directos a nómina (US-17)* / *Emitir factura vinculada al servicio cerrado (US-18, RN-09)* -> *Generar tablero mensual de KPIs (US-19)* -> Evento de fin *Servicio Facturado y Cerrado*.
+1. **Carril Cliente (`Portal /`):** Evento de inicio por mensaje (*Solicitud de cotización Web/WhatsApp/Tel*) -> *Revisar y responder cotización (US-05)* -> Gateway exclusivo de aceptación -> *Autorizar/Rechazar extra o mayor superficie (US-14, US-15)* -> *Firmar conformidad digital (US-11)*.
+
+2. **Carril Coordinador (`Intranet /admin`):** *Capturar datos y sugerir recursos (US-01, US-02)* -> Gateway `¿>10% desc. o >300m2 / $8,000? (RN-01, RN-02)` -> *Emitir y enviar cotización (<4h RN-03)* -> *Programar fecha y asignar cuadrilla (US-06, US-07)* -> Gateway `¿Cancelación previa? (US-16, RN-04)` -> *Cotizar extra o recálculo en sitio (US-14, US-15)*.
+
+3. **Carril Gerencia (`Intranet /admin` - Lic. Renata Cárdenas):** *Evaluar excepción de precio/dimensión (US-04)* -> Gateway de aprobación o descarte de propuesta.
+
+4. **Carril Supervisor / Cuadrilla (`Intranet /admin`):** *Consultar agenda y presentarse en sitio (US-08)* -> *Reportar ausencia y sustitución (US-12)* -> Gateway `¿Permite acceso? (RN-05)` -> *Registrar acceso denegado (US-13)* o *Registrar hora de inicio (US-09)* -> Gateway `¿Extra o mayor superficie? (RN-06, RN-07)` -> *Ejecutar limpieza y documentar incidencias (US-10)* -> *Registrar hora fin y resumen digital (US-09, US-11)*.
+
+5. **Carril Administración (`Intranet /admin`):** *Facturar penalización 50% (RN-04)* / *Facturar penalización 100% (RN-05)* / *Aplicar cambios directos a nómina (US-17)* / *Emitir factura vinculada al servicio cerrado (US-18, RN-09)* -> *Generar tablero mensual de KPIs (US-19)* -> Evento de fin *Servicio Facturado y Cerrado*.
+
 6. **Data Objects Modelados:** `[DO1] Solicitud Cotización`, `[DO2] Cotización Formal`, `[DO3] Orden de Servicio`, `[DO4] Registro Nómina`, `[DO5] Acta Digital + Fotos`, `[DO6] Factura Fiscal`.
