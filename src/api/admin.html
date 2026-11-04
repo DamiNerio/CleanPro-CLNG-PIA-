@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CleanPro Intranet | Panel Operativo y Administrativo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen font-sans">
+
+  <!-- Barra Superior Corporativa / Intranet -->
+  <header class="bg-slate-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-500 text-white font-extrabold px-3 py-1.5 rounded-lg text-lg">CP</div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight">CleanPro Intranet — Gestión Interna y Administración</h1>
+          <p class="text-xs text-slate-400">Uso exclusivo para Coordinación, Supervisores, Gerencia y Nómina/Facturación</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded-lg text-emerald-300 border border-slate-700 transition">
+          Ir al Portal del Cliente
+        </a>
+        <button onclick="cargarEstado()" class="bg-blue-700 hover:bg-blue-600 text-xs font-semibold px-4 py-2 rounded-lg transition">
+          Sincronizar Tablero
+        </button>
+        <a href="/docs" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded-lg text-slate-300 border border-slate-700 transition">
+          Swagger UI (API)
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Barra de Alertas Internas -->
+  <div id="notificacion" class="hidden max-w-7xl mx-auto mt-4 px-6">
+    <div id="notificacion-caja" class="p-4 rounded-xl shadow-sm border flex justify-between items-center">
+      <span id="notificacion-texto" class="font-medium text-sm"></span>
+      <button onclick="cerrarNotificacion()" class="text-sm font-bold px-2">&times;</button>
+    </div>
+  </div>
+
+  <!-- KPIs Ejecutivos (US-19) -->
+  <section class="max-w-7xl mx-auto px-6 mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <p class="text-xs uppercase font-bold text-slate-400">Total Cotizaciones</p>
+      <p id="kpi-cotizaciones" class="text-3xl font-extrabold text-slate-900 mt-1">0</p>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <p class="text-xs uppercase font-bold text-slate-400">Órdenes Activas / Cerradas</p>
+      <p id="kpi-ordenes" class="text-3xl font-extrabold text-blue-700 mt-1">0</p>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <p class="text-xs uppercase font-bold text-slate-400">Servicios por Facturar (RN-09)</p>
+      <p id="kpi-facturas" class="text-3xl font-extrabold text-amber-600 mt-1">0</p>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <p class="text-xs uppercase font-bold text-slate-400">Cambios en Nómina (US-17)</p>
+      <p id="kpi-nomina" class="text-3xl font-extrabold text-purple-700 mt-1">0</p>
+    </div>
+  </section>
+
+  <!-- Navegación de Roles Internos -->
+  <nav class="max-w-7xl mx-auto px-6 mt-6">
+    <div class="flex flex-wrap gap-2 border-b border-slate-300 pb-2">
+      <button onclick="cambiarTab('coordinador')" id="tab-btn-coordinador" class="tab-btn bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition">
+        1. Coordinador (Descuentos y Cuadrillas)
+      </button>
+      <button onclick="cambiarTab('supervisor')" id="tab-btn-supervisor" class="tab-btn bg-white text-slate-700 hover:bg-slate-200 px-4 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 transition">
+        2. Supervisor en Sitio (Ejecución e Incidencias)
+      </button>
+      <button onclick="cambiarTab('gerencia')" id="tab-btn-gerencia" class="tab-btn bg-white text-slate-700 hover:bg-slate-200 px-4 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 transition">
+        3. Gerencia y Administración (Autorizaciones, Facturas y Nómina)
+      </button>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-6 py-6">
+
+    <!-- ROL 1: COORDINADOR -->
+    <div id="tab-coordinador" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-base font-bold text-slate-900 mb-1">Otorgar Descuento en Cotización (US-03 / RN-01)</h2>
+        <p class="text-xs text-slate-500 mb-4">El coordinador puede autorizar hasta 10%. Si ingresa más del 10%, se bloqueará y pasará a Gerencia.</p>
+        <form onsubmit="aplicarDescuentoUI(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700">Cotización</label>
+            <select id="coord-folio-cot" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white"></select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700">Descuento (%)</label>
+              <input id="coord-descuento" type="number" min="1" max="50" required placeholder="Ej. 8 o 15" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700">Motivo</label>
+              <input id="coord-motivo" type="text" value="Contrato de frecuencia" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-2.5 rounded-lg text-sm transition">
+            Aplicar Descuento
+          </button>
+        </form>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-base font-bold text-slate-900 mb-1">Programar Servicio y Asignar Cuadrilla (US-06 / US-07)</h2>
+        <p class="text-xs text-slate-500 mb-4">Valida disponibilidad en calendario e impide traslapes de horario para una misma cuadrilla.</p>
+        <form onsubmit="programarOrdenUI(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700">Orden de Servicio</label>
+            <select id="coord-folio-orden" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white"></select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700">Fecha y Hora Programada</label>
+              <input id="coord-fecha" type="datetime-local" required value="2026-11-20T09:00" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700">Cuadrilla Operativa</label>
+              <select id="coord-cuadrilla" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white">
+                <option value="C-03">Cuadrilla C-03 (J. Ramírez, M. López)</option>
+                <option value="C-05">Cuadrilla C-05 (A. Garza, P. Sánchez)</option>
+                <option value="C-07">Cuadrilla C-07 (R. Treviño, L. Morales)</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm transition">
+            Confirmar Programación y Cuadrilla
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ROL 2: SUPERVISOR EN SITIO -->
+    <div id="tab-supervisor" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-base font-bold text-slate-900 mb-3">Agenda Operativa del Supervisor (US-08, US-09, US-13)</h2>
+        <div id="lista-ordenes-supervisor" class="space-y-3 text-sm"></div>
+      </div>
+
+      <div class="space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 class="text-base font-bold text-slate-800 mb-1">Documentar Incidencia en Sitio (US-10)</h3>
+          <p class="text-xs text-slate-500 mb-3">Exige descripción y evidencia fotográfica obligatoria.</p>
+          <form onsubmit="registrarIncidenciaUI(event)" class="space-y-3">
+            <select id="sup-folio-inc" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white"></select>
+            <input id="sup-tipo-inc" type="text" required placeholder="Tipo (Ej. Daño en mobiliario)" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            <input id="sup-desc-inc" type="text" required placeholder="Descripción detallada de la incidencia" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            <input id="sup-foto-inc" type="text" required value="evidencia_sitio_01.jpg" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 rounded-lg text-sm transition">
+              Registrar Incidencia Digital
+            </button>
+          </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 class="text-base font-bold text-slate-800 mb-1">Reportar Ausencia o Sustitución de Personal (US-12 / US-17)</h3>
+          <p class="text-xs text-slate-500 mb-3">Notifica directamente a Administración para ajuste de nómina.</p>
+          <form onsubmit="reportarAusenciaUI(event)" class="space-y-3">
+            <select id="sup-folio-aus" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white"></select>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="sup-ausente" type="text" required placeholder="Integrante ausente (Ej. J. Ramírez)" class="w-full px-3 py-2 border rounded-lg text-sm" />
+              <input id="sup-reemplazo" type="text" placeholder="Integrante entrante (opcional)" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <input id="sup-motivo-aus" type="text" required placeholder="Motivo del cambio" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            <button type="submit" class="w-full bg-purple-700 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg text-sm transition">
+              Enviar Registro a Nómina
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROL 3: GERENCIA Y ADMINISTRACIÓN -->
+    <div id="tab-gerencia" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-base font-bold text-slate-900 mb-1">Bandeja de Autorizaciones de Gerencia (US-04 / RN-01 / RN-02)</h2>
+        <p class="text-xs text-slate-500 mb-4">Cotizaciones que exceden el 10% de descuento, 300 m² o $8,000 MXN.</p>
+        <div id="lista-autorizaciones-gerencia" class="space-y-3 text-sm"></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 class="text-base font-bold text-slate-800 mb-3">Registros Facturables Vinculados (US-18 / RN-09)</h3>
+          <div id="lista-facturacion" class="space-y-2 text-sm"></div>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 class="text-base font-bold text-slate-800 mb-3">Bitácora de Cambios de Personal para Nómina (US-17)</h3>
+          <div id="lista-nomina" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    function mostrarNotificacion(mensaje, exito = true) {
+      const cont = document.getElementById('notificacion');
+      const caja = document.getElementById('notificacion-caja');
+      const txt = document.getElementById('notificacion-texto');
+      cont.classList.remove('hidden');
+      caja.className = exito
+        ? 'p-4 rounded-xl shadow-sm border bg-emerald-50 border-emerald-300 text-emerald-900 flex justify-between items-center'
+        : 'p-4 rounded-xl shadow-sm border bg-red-50 border-red-300 text-red-900 flex justify-between items-center';
+      txt.textContent = mensaje;
+    }
+
+    function cerrarNotificacion() {
+      document.getElementById('notificacion').classList.add('hidden');
+    }
+
+    function cambiarTab(tab) {
+      ['coordinador', 'supervisor', 'gerencia'].forEach(t => {
+        document.getElementById('tab-' + t).classList.add('hidden');
+        document.getElementById('tab-btn-' + t).className = 'tab-btn bg-white text-slate-700 hover:bg-slate-200 px-4 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 transition';
+      });
+      document.getElementById('tab-' + tab).classList.remove('hidden');
+      document.getElementById('tab-btn-' + tab).className = 'tab-btn bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition';
+    }
+
+    async function cargarEstado() {
+      const res = await fetch('/api/estado');
+      const data = await res.json();
+
+      document.getElementById('kpi-cotizaciones').textContent = data.kpis.total_cotizaciones;
+      document.getElementById('kpi-ordenes').textContent = data.kpis.total_ordenes;
+      document.getElementById('kpi-facturas').textContent = data.kpis.servicios_pendientes_facturar;
+      document.getElementById('kpi-nomina').textContent = data.kpis.cambios_personal_registrados;
+
+      const optsCot = data.cotizaciones.map(c => `<option value="${c.folio}">${c.folio} - ${c.cliente} ($${c.total} | ${c.estado})</option>`).join('');
+      document.getElementById('coord-folio-cot').innerHTML = optsCot || '<option value="">Sin cotizaciones</option>';
+
+      const optsOrd = data.ordenes.map(o => `<option value="${o.folio}">${o.folio} - ${o.cliente} (${o.estado})</option>`).join('');
+      ['coord-folio-orden', 'sup-folio-inc', 'sup-folio-aus'].forEach(id => {
+        document.getElementById(id).innerHTML = optsOrd || '<option value="">Sin órdenes activas</option>';
+      });
+
+      const divSup = document.getElementById('lista-ordenes-supervisor');
+      divSup.innerHTML = data.ordenes.length === 0
+        ? '<p class="text-slate-400">No hay órdenes de servicio registradas.</p>'
+        : data.ordenes.map(o => `
+          <div class="p-4 rounded-lg border border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-3">
+            <div>
+              <span class="font-bold">${o.folio}</span> — ${o.cliente} (${o.superficie_m2} m²)
+              <p class="text-xs text-slate-500">Estado: <b>${o.estado}</b> | Cuadrilla: <b>${o.cuadrilla || 'Sin asignar'}</b> | Incidencias: ${o.incidencias}</p>
+            </div>
+            <div class="flex gap-2">
+              ${o.estado === 'Programada' ? `
+                <button onclick="iniciarServicioUI('${o.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Registrar Inicio</button>
+                <button onclick="accesoDenegadoUI('${o.folio}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Acceso Denegado (100%)</button>
+              ` : ''}
+            </div>
+          </div>
+        `).join('');
+
+      const pendientes = data.cotizaciones.filter(c => c.estado === 'Pendiente de autorización');
+      document.getElementById('lista-autorizaciones-gerencia').innerHTML = pendientes.length === 0
+        ? '<p class="text-slate-400">No hay cotizaciones pendientes de autorización gerencial.</p>'
+        : pendientes.map(c => `
+          <div class="p-4 rounded-lg border border-amber-300 bg-amber-50 flex justify-between items-center">
+            <div>
+              <span class="font-bold text-amber-950">${c.folio}</span> — ${c.cliente} | ${c.superficie_m2} m² | Descuento: <b>${c.descuento}%</b> | Total: <b>$${c.total} MXN</b>
+            </div>
+            <button onclick="autorizarGerenciaUI('${c.folio}')" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold">
+              Aprobar Excepción (Gerencia)
+            </button>
+          </div>
+        `).join('');
+
+      document.getElementById('lista-facturacion').innerHTML = data.facturables.length === 0
+        ? '<p class="text-slate-400">Sin registros facturables aún.</p>'
+        : data.facturables.map(f => `
+          <div class="p-3 rounded-lg border border-slate-200 flex justify-between items-center">
+            <div><b>${f.folio_orden}</b> — ${f.cliente}<p class="text-xs text-slate-500">${f.motivo}</p></div>
+            <span class="font-bold text-emerald-700">$${f.monto} MXN</span>
+          </div>
+        `).join('');
+
+      document.getElementById('lista-nomina').innerHTML = data.cambios_personal.length === 0
+        ? '<p class="text-slate-400">Sin movimientos de personal registrados.</p>'
+        : data.cambios_personal.map(n => `
+          <div class="p-3 rounded-lg border border-slate-200">
+            <b>${n.id} (${n.folio_orden})</b>: Saliente: <span class="text-red-600">${n.integrante_saliente}</span> &rarr; Entrante: <span class="text-emerald-700 font-semibold">${n.integrante_entrante}</span>
+            <p class="text-xs text-slate-500">Motivo: ${n.motivo}</p>
+          </div>
+        `).join('');
+    }
+
+    async function aplicarDescuentoUI(e) {
+      e.preventDefault();
+      const folio = document.getElementById('coord-folio-cot').value;
+      const res = await fetch(`/api/cotizaciones/${folio}/descuento`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          porcentaje: parseFloat(document.getElementById('coord-descuento').value),
+          rol: 'coordinador',
+          usuario: 'Coordinador CleanPro',
+          motivo: document.getElementById('coord-motivo').value
+        })
+      });
+      const data = await res.json();
+      cargarEstado();
+      if (res.ok) {
+        mostrarNotificacion(`Descuento aplicado a ${folio}. Nuevo total: $${data.total} MXN.`);
+      } else {
+        mostrarNotificacion(`Bloqueo RN-01: ${data.detail} (Enviada a la pestaña de Gerencia).`, false);
+      }
+    }
+
+    async function autorizarGerenciaUI(folio) {
+      const res = await fetch(`/api/cotizaciones/${folio}/autorizar`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        mostrarNotificacion(`Cotización ${folio} autorizada por Gerencia (Lic. Renata Cárdenas).`);
+        cargarEstado();
+      } else {
+        mostrarNotificacion(data.detail, false);
+      }
+    }
+
+    async function programarOrdenUI(e) {
+      e.preventDefault();
+      const folio = document.getElementById('coord-folio-orden').value;
+      const fecha = document.getElementById('coord-fecha').value + ':00';
+      const cuadrilla = document.getElementById('coord-cuadrilla').value;
+      const res = await fetch(`/api/ordenes/${folio}/programar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fecha_inicio_iso: fecha, id_cuadrilla: cuadrilla })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        mostrarNotificacion(`Orden ${folio} programada con la cuadrilla ${data.cuadrilla}.`);
+        cargarEstado();
+      } else {
+        mostrarNotificacion(`Conflicto de Horario (CA-06.3): ${data.detail}`, false);
+      }
+    }
+
+    async function iniciarServicioUI(folio) {
+      const res = await fetch(`/api/ordenes/${folio}/iniciar`, { method: 'POST' });
+      if (res.ok) {
+        mostrarNotificacion(`Inicio de servicio ${folio} registrado con hora del sistema.`);
+        cargarEstado();
+      }
+    }
+
+    async function registrarIncidenciaUI(e) {
+      e.preventDefault();
+      const folio = document.getElementById('sup-folio-inc').value;
+      const res = await fetch(`/api/ordenes/${folio}/incidencias`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: document.getElementById('sup-tipo-inc').value,
+          descripcion: document.getElementById('sup-desc-inc').value,
+          fotos: [document.getElementById('sup-foto-inc').value]
+        })
+      });
+      if (res.ok) {
+        mostrarNotificacion(`Incidencia registrada en la orden ${folio}.`);
+        e.target.reset();
+        cargarEstado();
+      }
+    }
+
+    async function reportarAusenciaUI(e) {
+      e.preventDefault();
+      const folio = document.getElementById('sup-folio-aus').value;
+      const res = await fetch(`/api/ordenes/${folio}/ausencia`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          integrante_ausente: document.getElementById('sup-ausente').value,
+          integrante_reemplazo: document.getElementById('sup-reemplazo').value || null,
+          motivo: document.getElementById('sup-motivo-aus').value
+        })
+      });
+      if (res.ok) {
+        mostrarNotificacion(`Cambio de personal enviado al tablero de Nómina.`);
+        e.target.reset();
+        cargarEstado();
+      }
+    }
+
+    async function accesoDenegadoUI(folio) {
+      const res = await fetch(`/api/ordenes/${folio}/acceso-denegado`, { method: 'POST' });
+      if (res.ok) {
+        mostrarNotificacion(`Acceso denegado registrado en ${folio}. Cargo del 100% enviado a Facturación (RN-05).`, false);
+        cargarEstado();
+      }
+    }
+
+    cargarEstado();
+  </script>
+</body>
+</html>
