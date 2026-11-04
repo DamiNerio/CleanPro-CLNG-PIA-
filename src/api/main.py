@@ -15,7 +15,7 @@ from src.application.services import (
 )
 
 app = FastAPI(
-    title="CleanPro - API de Lógica de Negocios (PIA CLN)",
+    title="CleanPro - API de Lógica de Negocios (PIA CLNG)",
     description="Implementación DDD + Specification + State Machine para el Caso 12 CleanPro (Equipo 12 - FIME UANL).",
     version="1.0.0",
 )
