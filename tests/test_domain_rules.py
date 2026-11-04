@@ -128,3 +128,4 @@ def test_us12_a_us17_excepciones_penalizaciones_y_nomina():
     res_canc = srv_excepciones.cancelar_o_reprogramar(orden.folio, fecha_prog - timedelta(hours=12))
     assert orden.estado == EstadoOrdenServicio.CANCELADA_CON_CARGO
     assert res_canc["cargo"] == round(orden.precio_total.valor * 0.5, 2)
+    
