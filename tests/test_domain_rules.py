@@ -87,6 +87,8 @@ def test_us09_a_us11_y_us18_ejecucion_incidencia_cierre_y_facturacion():
     })
     orden = srv_cotizacion.aceptar_cotizacion("COT-2210")
 
+    srv_programacion.programar_y_asignar(orden.folio, datetime(2026, 11, 20, 9, 0), "C-05")
+    
     # Intento de cierre sin inicio falla (CA-09.2)
     with pytest.raises(DomainError, match="inicio"):
         srv_ejecucion.cerrar_servicio(orden.folio, "Cliente", True)
