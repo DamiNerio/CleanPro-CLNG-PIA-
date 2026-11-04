@@ -594,3 +594,18 @@ Característica: Tablero de indicadores clave de desempeño (KPIs)
 | 20 | **Acta Digital de Servicio** | Conjunto inmutable de datos de cierre de la orden compuesto por las marcas de tiempo reales, evidencias fotográficas y la firma digital del cliente. |
 | 21 | **Firma de Conformidad** | Aprobación digital capturada por el cliente al cierre del servicio; si se registra como inconformidad, exige capturar un motivo obligatorio. |
 | 22 | **Registro Facturable** | Obligación de cobro generada automáticamente al cerrar un servicio o aplicar una penalización (50% o 100%) para garantizar que ningún servicio escape a facturación. |
+
+---
+
+## 6. Matriz de Trazabilidad Completa (Análisis <-> Arquitectura <-> Código <-> Pruebas)
+
+| Necesidad BRD | Regla de Negocio | User Stories / Criterios | Elemento en Diagrama BPMN | Componente DDD / Código (`src/`) | Pruebas Automatizadas (`tests/`) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **N-01, N-05:** Cotización ágil y límites por rol | RN-02, RN-03 | US-01, US-02, US-05 (CA-01 a CA-05) | Evento Inicio Mensaje -> *Capturar datos y sugerir recursos* -> `[DO1]`, `[DO2]` | `CotizacionFormal`, `Superficie`, `CotizacionDentroDeLimiteCoordinadorSpec`, `ServicioCotizacion` | `test_us01_y_us02_cotizacion_y_sugerencia_recursos`, `test_rn02_limite_superficie_y_monto` |
+| **N-01, N-05:** Control estricto de descuentos | RN-01 | US-03, US-04 (CA-03, CA-04) | Gateway `¿>10% desc. o >300m2/$8,000?` -> *Evaluar excepción (Gerencia)* | `Descuento`, `DescuentoAutorizablePorCoordinadorSpec`, `CotizacionStateMachine` | `test_us03_y_us04_descuento_mayor_10_requiere_gerencia` |
+| **N-01:** Programación sin traslapes de horario | RN-09 | US-06, US-07, US-08 (CA-06 a CA-08) | *Programar fecha y asignar cuadrilla* (`[DO3] Orden`) -> *Consultar agenda* | `OrdenDeServicio`, `Cuadrilla`, `CuadrillaDisponibleSpec`, `ServicioProgramacion` | `test_us06_a_us08_programacion_y_bloqueo_traslape` |
+| **N-04:** Ejecución, evidencia de incidencias y cierre | RN-09 | US-09, US-10, US-11 (CA-09 a CA-11) | *Registrar inicio* -> *Ejecutar y documentar incidencias* -> *Firmar conformidad* (`[DO5]`) | `Incidencia`, `FirmaConformidad`, `OrdenServicioStateMachine`, `ServicioEjecucion` | `test_us09_a_us11_y_us18_ejecucion_incidencia_cierre_y_facturacion` |
+| **N-02:** Sincronización de ausencias con nómina | - | US-12, US-17 (CA-12, CA-17) | *Reportar ausencia y sustitución* -> `[DO4] Registro Nómina` -> *Aplicar a nómina* | `AusenciaReportada` (Event), `ServicioExcepciones.reportar_ausencia` | `test_us12_y_us17_ausencia_alimenta_nomina_administracion` |
+| **N-01, N-03:** Penalización por acceso denegado o cancelación | RN-04, RN-05 | US-13, US-16 (CA-13, CA-16) | Gateways `¿Cancelación previa?` (50%) y `¿Permite acceso?` (100%) | `CancelacionSinPenalizacionSpec`, `ClienteSuperaLimiteReprogramacionesSpec`, `AccesoDenegadoRegistrado` | `test_us13_acceso_denegado_cobra_100`, `test_us16_cancelacion_tardia_y_alerta_reprogramacion` |
+| **N-04:** Extras en sitio y recálculo de superficie | RN-06, RN-07 | US-14, US-15 (CA-14, CA-15) | Gateway `¿Extra o mayor superficie?` -> *Cotizar extra o recálculo* -> *Autorizar* | `ServicioExtra`, `OrdenDeServicio.solicitar_y_autorizar_extra`, `recalcular_por_superficie_mayor` | `test_us14_y_us15_extras_en_sitio_y_recalculo_superficie` |
+| **N-03, N-06:** Facturación vinculada y KPIs gerenciales | RN-03, RN-09 | US-18, US-19 (CA-18, CA-19) | *Emitir factura vinculada* (`[DO6]`) -> *Generar tablero mensual de KPIs* | `ServicioCerrado` (Event), `vincular_factura`, Endpoint `/api/administracion/kpis` | `test_us18_y_us19_facturacion_y_kpis_gerenciales` |
