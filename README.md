@@ -22,7 +22,7 @@ Solución integral de software basada en **Domain-Driven Design (DDD)**, patrón
 ## Enlaces Oficiales de Entrega
 
 * **Repositorio GitHub:** `https://github.com/DamiNerio/cleanpro-CLNG-PIA-` 
-* **Portal Público del Cliente (Producción Render):** `https://cleanpro-bjr6.onrender.com/` *(o el subdominio asignado por Render a tu servicio `CleanPro`)*
+* **Portal Público del Cliente (Producción Render):** `https://cleanpro-bjr6.onrender.com/` 
 * **Intranet Operativa y Administrativa (Personal CleanPro):** `https://cleanpro-bjr6.onrender.com/admin`
 * **Swagger UI / OpenAPI Activo en Producción:** `https://cleanpro-bjr6.onrender.com/docs`
 
