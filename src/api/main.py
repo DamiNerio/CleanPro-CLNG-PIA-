@@ -66,6 +66,16 @@ def interfaz_web_cleanpro():
     html_path = Path(__file__).parent / "index.html"
     return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
 
+@app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
+def intranet_administrativa_cleanpro():
+    html_path = Path(__file__).parent / "admin.html"
+    return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def interfaz_web_cleanpro():
+    html_path = Path(__file__).parent / "index.html"
+    return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+
 @app.get("/api/estado", tags=["4. Administración y Reportes"])
 def obtener_estado_completo():
     sin_facturar = [r for r in repo.registros_facturables.values() if not r["folio_factura"]]
