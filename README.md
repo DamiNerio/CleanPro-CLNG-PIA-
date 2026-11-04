@@ -63,7 +63,6 @@ pip install -r requirements.txt
 uvicorn src.api.main:app --reload --port 8000
 ```
 * **Swagger UI interactivo:** Abrir en el navegador `http://localhost:8000/docs`
-* **Esquema OpenAPI JSON:** `http://localhost:8000/openapi.json`
 
 ### 3. Ejecutar la suite de pruebas y verificar cobertura ($\ge 80\%$)
 ```bash
