@@ -1,10 +1,5 @@
 # CleanPro — (PIA CLNG)
 
-![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/OpenAPI-Swagger_UI-009688?logo=fastapi&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
-
 Solución integral de software basada en **Domain-Driven Design (DDD)**, patrón **Specification**, **State Machine**, **portales web diferenciados por rol** y **API REST documentada con OpenAPI/Swagger** para el **Caso de Negocio 12: CleanPro** (Servicios de limpieza residencial y empresarial).
 
 ---
@@ -12,7 +7,7 @@ Solución integral de software basada en **Domain-Driven Design (DDD)**, patrón
 ## Datos
 
 * **Institución:** Universidad Autónoma de Nuevo León (UANL) — Facultad de Ingeniería Mecánica y Eléctrica (FIME)
-* **Unidad de Aprendizaje:** Componentes de Lógica de Negocios (CLN) — Semestre Agosto-Diciembre 2026
+* **Unidad de Aprendizaje:** Componentes de Lógica de Negocios (CLNG) — Semestre Agosto-Diciembre 2026
 * **Docente:** Ing. Miguel Ángel Gómez Marroquín
 * **Equipo:** 12 | **Grupo:** 004 | **Hora:** Martes M4-M6
 
