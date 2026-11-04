@@ -2,7 +2,7 @@
 
 **Universidad Autónoma de Nuevo León**  
 **Facultad de Ingeniería Mecánica y Eléctrica (FIME)**  
-**Unidad de Aprendizaje:** Componentes de Lógica de Negocios (CLN)  
+**Unidad de Aprendizaje:** Componentes de Lógica de Negocios (CLNG)  
 **Docente:** Ing. Miguel Ángel Gómez Marroquín  
 **Equipo:** 12 | **Grupo:** 004 | **Hora:** Martes M4-M6  
 
