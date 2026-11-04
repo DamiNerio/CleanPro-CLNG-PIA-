@@ -16,6 +16,8 @@ class CotizacionStateMachine:
             EstadoCotizacion.PENDIENTE_AUTORIZACION,
             EstadoCotizacion.AUTORIZADA,
             EstadoCotizacion.ENVIADA,
+            EstadoCotizacion.ACEPTADA,
+            EstadoCotizacion.RECHAZADA_CLIENTE,
         },
         EstadoCotizacion.PENDIENTE_AUTORIZACION: {
             EstadoCotizacion.AUTORIZADA,
@@ -61,7 +63,7 @@ class OrdenServicioStateMachine:
             EstadoOrdenServicio.CANCELADA_SIN_CARGO,
         },
         EstadoOrdenServicio.PROGRAMADA: {
-            EstadoOrdenServicio.PROGRAMADA,  # Reprogramación
+            EstadoOrdenServicio.PROGRAMADA,
             EstadoOrdenServicio.EN_EJECUCION,
             EstadoOrdenServicio.NO_EJECUTADO_CON_CARGO,
             EstadoOrdenServicio.CANCELADA_SIN_CARGO,
@@ -83,7 +85,6 @@ class OrdenServicioStateMachine:
         EstadoOrdenServicio.CANCELADA_SIN_CARGO: set(),
         EstadoOrdenServicio.FACTURADA: set(),
     }
-
 
     @classmethod
     def transicionar(cls, estado_actual: EstadoOrdenServicio, estado_nuevo: EstadoOrdenServicio) -> EstadoOrdenServicio:
