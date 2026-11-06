@@ -51,11 +51,11 @@
       <p id="kpi-ordenes" class="text-3xl font-extrabold text-blue-700 mt-1">0</p>
     </div>
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-      <p class="text-xs uppercase font-bold text-slate-400">Servicios por Facturar </p>
+      <p class="text-xs uppercase font-bold text-slate-400">Servicios por Facturar (RN-09)</p>
       <p id="kpi-facturas" class="text-3xl font-extrabold text-amber-600 mt-1">0</p>
     </div>
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-      <p class="text-xs uppercase font-bold text-slate-400">Cambios en Nómina </p>
+      <p class="text-xs uppercase font-bold text-slate-400">Cambios en Nómina (US-17)</p>
       <p id="kpi-nomina" class="text-3xl font-extrabold text-purple-700 mt-1">0</p>
     </div>
   </section>
@@ -64,10 +64,10 @@
   <nav class="max-w-7xl mx-auto px-6 mt-6">
     <div class="flex flex-wrap gap-2 border-b border-slate-300 pb-2">
       <button onclick="cambiarTab('coordinador')" id="tab-btn-coordinador" class="tab-btn bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition">
-        1. Coordinador (Descuentos y Cuadrillas)
+        1. Coordinador (Descuentos, Agenda y Cancelaciones)
       </button>
       <button onclick="cambiarTab('supervisor')" id="tab-btn-supervisor" class="tab-btn bg-white text-slate-700 hover:bg-slate-200 px-4 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 transition">
-        2. Supervisor en Sitio (Ejecución e Incidencias)
+        2. Supervisor en Sitio (Ejecución e Incidencias con Foto)
       </button>
       <button onclick="cambiarTab('gerencia')" id="tab-btn-gerencia" class="tab-btn bg-white text-slate-700 hover:bg-slate-200 px-4 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 transition">
         3. Gerencia y Administración (Autorizaciones, Facturas y Nómina)
@@ -78,84 +78,100 @@
   <main class="max-w-7xl mx-auto px-6 py-6">
 
     <!-- ROL 1: COORDINADOR -->
-    <div id="tab-coordinador" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-base font-bold text-slate-900 mb-1">Otorgar Descuento en Cotización </h2>
-        <p class="text-xs text-slate-500 mb-4">El coordinador puede autorizar hasta 10%. Si ingresa más del 10%, se bloqueará y pasará a Gerencia.</p>
-        <form onsubmit="aplicarDescuentoUI(event)" class="space-y-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700">Cotización</label>
-            <select id="coord-folio-cot" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white"></select>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
+    <div id="tab-coordinador" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 class="text-base font-bold text-slate-900 mb-1">Otorgar Descuento en Cotización (US-03 / RN-01)</h2>
+          <p class="text-xs text-slate-500 mb-4">El coordinador puede autorizar hasta 10%. Si ingresa más del 10%, se bloqueará y pasará a Gerencia.</p>
+          <form onsubmit="aplicarDescuentoUI(event)" class="space-y-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-700">Descuento (%)</label>
-              <input id="coord-descuento" type="number" min="1" max="50" required placeholder="Ej. 8 o 15" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
+              <label class="block text-xs font-semibold text-slate-700">Cotización</label>
+              <select id="coord-folio-cot" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white"></select>
             </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700">Descuento (%)</label>
+                <input id="coord-descuento" type="number" min="1" max="50" required placeholder="Ej. 8 o 15" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700">Motivo</label>
+                <input id="coord-motivo" type="text" value="Contrato de frecuencia" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
+              </div>
+            </div>
+            <button type="submit" class="w-full bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-2.5 rounded-lg text-sm transition">
+              Aplicar Descuento
+            </button>
+          </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 class="text-base font-bold text-slate-900 mb-1">Programar Servicio y Asignar Cuadrilla (US-06 / US-07)</h2>
+          <p class="text-xs text-slate-500 mb-4">Valida disponibilidad en calendario e impide traslapes de horario para una misma cuadrilla.</p>
+          <form onsubmit="programarOrdenUI(event)" class="space-y-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-700">Motivo</label>
-              <input id="coord-motivo" type="text" value="Contrato de frecuencia" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
+              <label class="block text-xs font-semibold text-slate-700">Orden de Servicio</label>
+              <select id="coord-folio-orden" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white"></select>
             </div>
-          </div>
-          <button type="submit" class="w-full bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-2.5 rounded-lg text-sm transition">
-            Aplicar Descuento
-          </button>
-        </form>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700">Fecha y Hora Programada</label>
+                <input id="coord-fecha" type="datetime-local" required value="2026-11-20T09:00" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700">Cuadrilla Operativa</label>
+                <select id="coord-cuadrilla" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white">
+                  <option value="C-03">Cuadrilla C-03 (J. Ramírez, M. López)</option>
+                  <option value="C-05">Cuadrilla C-05 (A. Garza, P. Sánchez)</option>
+                  <option value="C-07">Cuadrilla C-07 (R. Treviño, L. Morales)</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm transition">
+              Confirmar Programación y Cuadrilla
+            </button>
+          </form>
+        </div>
       </div>
 
+      <!-- Control de Reprogramaciones y Cancelaciones Administrativas (US-16 / RN-04) -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-base font-bold text-slate-900 mb-1">Programar Servicio y Asignar Cuadrilla </h2>
-        <p class="text-xs text-slate-500 mb-4">Valida disponibilidad en calendario e impide traslapes de horario para una misma cuadrilla.</p>
-        <form onsubmit="programarOrdenUI(event)" class="space-y-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700">Orden de Servicio</label>
-            <select id="coord-folio-orden" required class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white"></select>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700">Fecha y Hora Programada</label>
-              <input id="coord-fecha" type="datetime-local" required value="2026-11-20T09:00" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700">Cuadrilla Operativa</label>
-              <select id="coord-cuadrilla" class="w-full mt-1 px-3 py-2 border rounded-lg text-sm bg-white">
-                <option value="C-03">Cuadrilla C-03 (J. Ramírez, M. López)</option>
-                <option value="C-05">Cuadrilla C-05 (A. Garza, P. Sánchez)</option>
-                <option value="C-07">Cuadrilla C-07 (R. Treviño, L. Morales)</option>
-              </select>
-            </div>
-          </div>
-          <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm transition">
-            Confirmar Programación y Cuadrilla
-          </button>
-        </form>
+        <h2 class="text-base font-bold text-slate-900 mb-1">Control de Reprogramaciones (Máx. 2/mes) y Cancelaciones (<24h o Autorización Manual)</h2>
+        <p class="text-xs text-slate-500 mb-4">Permite reprogramar citas o cancelar verificando automáticamente las 24 horas respecto a hoy, o autorizando manualmente con/sin penalización del 50%.</p>
+        <div id="lista-ordenes-coordinador" class="space-y-3 text-sm"></div>
       </div>
     </div>
 
     <!-- ROL 2: SUPERVISOR EN SITIO -->
     <div id="tab-supervisor" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-base font-bold text-slate-900 mb-3">Agenda Operativa del Supervisor </h2>
+        <h2 class="text-base font-bold text-slate-900 mb-3">Agenda Operativa del Supervisor (US-08, US-09, US-13)</h2>
         <div id="lista-ordenes-supervisor" class="space-y-3 text-sm"></div>
       </div>
 
       <div class="space-y-6">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-base font-bold text-slate-800 mb-1">Documentar Incidencia en Sitio </h3>
-          <p class="text-xs text-slate-500 mb-3">Exige descripción y evidencia fotográfica obligatoria.</p>
+          <h3 class="text-base font-bold text-slate-800 mb-1">Documentar Incidencia en Sitio con Fotografía Real (US-10)</h3>
+          <p class="text-xs text-slate-500 mb-3">Seleccione una imagen desde su dispositivo para adjuntarla como evidencia obligatoria.</p>
           <form onsubmit="registrarIncidenciaUI(event)" class="space-y-3">
             <select id="sup-folio-inc" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white"></select>
-            <input id="sup-tipo-inc" type="text" required placeholder="Tipo (Ej. Daño en mobiliario)" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            <input id="sup-tipo-inc" type="text" required placeholder="Tipo (Ej. Daño en mobiliario / Cristal roto)" class="w-full px-3 py-2 border rounded-lg text-sm" />
             <input id="sup-desc-inc" type="text" required placeholder="Descripción detallada de la incidencia" class="w-full px-3 py-2 border rounded-lg text-sm" />
-            <input id="sup-foto-inc" type="text" required value="evidencia_sitio_01.jpg" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Adjuntar Fotografía de Evidencia *</label>
+              <input id="sup-foto-file" type="file" accept="image/*" required onchange="previsualizarImagen(event)" class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-800 hover:file:bg-amber-100" />
+              <div id="preview-contenedor" class="hidden mt-2">
+                <p class="text-[11px] text-slate-500 mb-1">Vista previa de la evidencia a subir:</p>
+                <img id="preview-img" src="" alt="Vista previa" class="h-24 rounded-lg border border-slate-300 object-cover" />
+              </div>
+            </div>
             <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 rounded-lg text-sm transition">
-              Registrar Incidencia Digital
+              Registrar Incidencia con Imagen
             </button>
           </form>
         </div>
 
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-base font-bold text-slate-800 mb-1">Reportar Ausencia o Sustitución de Personal </h3>
+          <h3 class="text-base font-bold text-slate-800 mb-1">Reportar Ausencia o Sustitución de Personal (US-12 / US-17)</h3>
           <p class="text-xs text-slate-500 mb-3">Notifica directamente a Administración para ajuste de nómina.</p>
           <form onsubmit="reportarAusenciaUI(event)" class="space-y-3">
             <select id="sup-folio-aus" required class="w-full px-3 py-2 border rounded-lg text-sm bg-white"></select>
@@ -175,18 +191,24 @@
     <!-- ROL 3: GERENCIA Y ADMINISTRACIÓN -->
     <div id="tab-gerencia" class="hidden space-y-6">
       <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-base font-bold text-slate-900 mb-1">Bandeja de Autorizaciones de Gerencia </h2>
-        <p class="text-xs text-slate-500 mb-4">Cotizaciones que exceden el 10% de descuento, 300 m² o $8,000 MXN.</p>
+        <h2 class="text-base font-bold text-slate-900 mb-1">1. Bandeja de Autorizaciones de Cotización (US-04 / RN-01 / RN-02)</h2>
+        <p class="text-xs text-slate-500 mb-4">Cotizaciones que exceden el 10% de descuento, 300 m² o $8,000 MXN. Gerencia puede aprobar o rechazar la propuesta.</p>
         <div id="lista-autorizaciones-gerencia" class="space-y-3 text-sm"></div>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-base font-bold text-slate-900 mb-1">2. Solicitudes de Reprogramación Extra (>2 en el mes — RN-04 / CA-16.2)</h2>
+        <p class="text-xs text-slate-500 mb-4">Órdenes que superaron el límite de 2 reprogramaciones mensuales y requieren decisión de Gerencia.</p>
+        <div id="lista-reprogramaciones-gerencia" class="space-y-3 text-sm"></div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-base font-bold text-slate-800 mb-3">Registros Facturables Vinculados </h3>
+          <h3 class="text-base font-bold text-slate-800 mb-3">Registros Facturables Vinculados (US-18 / RN-09)</h3>
           <div id="lista-facturacion" class="space-y-2 text-sm"></div>
         </div>
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h3 class="text-base font-bold text-slate-800 mb-3">Bitácora de Cambios de Personal para Nómina </h3>
+          <h3 class="text-base font-bold text-slate-800 mb-3">Bitácora de Cambios de Personal para Nómina (US-17)</h3>
           <div id="lista-nomina" class="space-y-2 text-sm"></div>
         </div>
       </div>
@@ -195,6 +217,30 @@
   </main>
 
   <script>
+    let imagenBase64Actual = null;
+
+    function obtenerFechaLocalISO() {
+      const ahora = new Date();
+      const offsetMs = ahora.getTimezoneOffset() * 60000;
+      return new Date(ahora.getTime() - offsetMs).toISOString().slice(0, 19);
+    }
+
+    function previsualizarImagen(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        imagenBase64Actual = null;
+        document.getElementById('preview-contenedor').classList.add('hidden');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        imagenBase64Actual = evt.target.result;
+        document.getElementById('preview-img').src = imagenBase64Actual;
+        document.getElementById('preview-contenedor').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
     function mostrarNotificacion(mensaje, exito = true) {
       const cont = document.getElementById('notificacion');
       const caja = document.getElementById('notificacion-caja');
@@ -236,35 +282,114 @@
         document.getElementById(id).innerHTML = optsOrd || '<option value="">Sin órdenes activas</option>';
       });
 
+      // Lista de órdenes en Coordinador (Reprogramar y Cancelar con opciones)
+      const divCoordOrd = document.getElementById('lista-ordenes-coordinador');
+      divCoordOrd.innerHTML = data.ordenes.length === 0
+        ? '<p class="text-slate-400">No hay órdenes registradas.</p>'
+        : data.ordenes.map(o => {
+            let textoFecha = 'Sin programar';
+            let horasRestantes = null;
+            if (o.fecha_programada) {
+              const fc = new Date(o.fecha_programada);
+              textoFecha = fc.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+              horasRestantes = ((fc - new Date()) / 3600000).toFixed(1);
+            }
+            return `
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-3">
+                <div>
+                  <span class="font-bold text-slate-900">${o.folio}</span> — ${o.cliente}
+                  <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">${o.estado}</span>
+                  <p class="text-xs text-slate-500 mt-1">
+                    Fecha programada: <b>${textoFecha}</b> | Cuadrilla: <b>${o.cuadrilla || 'Sin asignar'}</b> | Reprogramaciones: <b>${o.reprogramaciones_mes}/2</b>
+                    ${horasRestantes !== null ? `| Faltan: <b>${horasRestantes} hrs</b>` : ''}
+                  </p>
+                </div>
+                ${o.estado === 'Programada' ? `
+                  <div class="flex flex-wrap items-center gap-2">
+                    <input type="datetime-local" id="coord-reprog-${o.folio}" value="2026-11-26T11:00" class="px-2 py-1 border rounded text-xs bg-white" />
+                    <button onclick="reprogramarDesdeAdmin('${o.folio}')" class="bg-blue-700 hover:bg-blue-600 text-white px-2.5 py-1.5 rounded text-xs font-semibold">Reprogramar</button>
+                    <button onclick="cancelarDesdeAdmin('${o.folio}', 'automatico')" class="bg-slate-700 hover:bg-slate-600 text-white px-2.5 py-1.5 rounded text-xs font-semibold">Cancelar (Auto 24h)</button>
+                    <button onclick="cancelarDesdeAdmin('${o.folio}', 'exentar_cargo')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded text-xs font-semibold">Autorizar Sin Cargo ($0)</button>
+                    <button onclick="cancelarDesdeAdmin('${o.folio}', 'forzar_cargo_50')" class="bg-red-700 hover:bg-red-600 text-white px-2.5 py-1.5 rounded text-xs font-semibold">Aplicar Cargo 50%</button>
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }).join('');
+
+      // Lista de órdenes en Supervisor con miniaturas de fotos
       const divSup = document.getElementById('lista-ordenes-supervisor');
       divSup.innerHTML = data.ordenes.length === 0
         ? '<p class="text-slate-400">No hay órdenes de servicio registradas.</p>'
-        : data.ordenes.map(o => `
-          <div class="p-4 rounded-lg border border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-3">
-            <div>
-              <span class="font-bold">${o.folio}</span> — ${o.cliente} (${o.superficie_m2} m²)
-              <p class="text-xs text-slate-500">Estado: <b>${o.estado}</b> | Cuadrilla: <b>${o.cuadrilla || 'Sin asignar'}</b> | Incidencias: ${o.incidencias}</p>
-            </div>
-            <div class="flex gap-2">
-              ${o.estado === 'Programada' ? `
-                <button onclick="iniciarServicioUI('${o.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Registrar Inicio</button>
-                <button onclick="accesoDenegadoUI('${o.folio}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Acceso Denegado (100%)</button>
-              ` : ''}
-            </div>
-          </div>
-        `).join('');
+        : data.ordenes.map(o => {
+            const evidenciasHTML = (o.incidencias_detalle && o.incidencias_detalle.length > 0)
+              ? `<div class="mt-2 pt-2 border-t border-slate-200 space-y-1.5">
+                   ${o.incidencias_detalle.map(inc => `
+                     <div class="text-xs bg-white p-2 rounded border border-slate-200">
+                       <p class="font-semibold text-amber-900">${inc.tipo}: <span class="font-normal text-slate-600">${inc.descripcion}</span></p>
+                       <div class="flex gap-2 mt-1 flex-wrap">
+                         ${inc.fotos.map(f => f.startsWith('data:image')
+                           ? `<img src="${f}" alt="Evidencia" class="h-14 w-20 object-cover rounded border border-amber-400 cursor-pointer" onclick="window.open('${f}')" />`
+                           : `<span class="text-[11px] bg-slate-100 px-2 py-0.5 rounded">${f}</span>`
+                         ).join('')}
+                       </div>
+                     </div>
+                   `).join('')}
+                 </div>`
+              : '';
+            return `
+              <div class="p-4 rounded-lg border border-slate-200 bg-slate-50">
+                <div class="flex flex-wrap justify-between items-center gap-3">
+                  <div>
+                    <span class="font-bold">${o.folio}</span> — ${o.cliente} (${o.superficie_m2} m²)
+                    <p class="text-xs text-slate-500">Estado: <b>${o.estado}</b> | Cuadrilla: <b>${o.cuadrilla || 'Sin asignar'}</b> | Incidencias: <b>${o.incidencias}</b></p>
+                  </div>
+                  <div class="flex gap-2">
+                    ${o.estado === 'Programada' ? `
+                      <button onclick="iniciarServicioUI('${o.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Registrar Inicio</button>
+                      <button onclick="accesoDenegadoUI('${o.folio}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Acceso Denegado (100%)</button>
+                    ` : ''}
+                  </div>
+                </div>
+                ${evidenciasHTML}
+              </div>
+            `;
+          }).join('');
 
+      // Autorizaciones de Cotización en Gerencia (Aprobar o Rechazar)
       const pendientes = data.cotizaciones.filter(c => c.estado === 'Pendiente de autorización');
       document.getElementById('lista-autorizaciones-gerencia').innerHTML = pendientes.length === 0
         ? '<p class="text-slate-400">No hay cotizaciones pendientes de autorización gerencial.</p>'
         : pendientes.map(c => `
-          <div class="p-4 rounded-lg border border-amber-300 bg-amber-50 flex justify-between items-center">
+          <div class="p-4 rounded-lg border border-amber-300 bg-amber-50 flex flex-wrap justify-between items-center gap-3">
             <div>
-              <span class="font-bold text-amber-950">${c.folio}</span> — ${c.cliente} | ${c.superficie_m2} m² | Descuento: <b>${c.descuento}%</b> | Total: <b>$${c.total} MXN</b>
+              <span class="font-bold text-amber-950">${c.folio}</span> — ${c.cliente} | Superficie: <b>${c.superficie_m2} m²</b> | Descuento: <b>${c.descuento}%</b> | Total: <b>$${c.total} MXN</b>
             </div>
-            <button onclick="autorizarGerenciaUI('${c.folio}')" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold">
-              Aprobar Excepción (Gerencia)
-            </button>
+            <div class="flex gap-2">
+              <button onclick="autorizarGerenciaUI('${c.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                Aprobar Excepción
+              </button>
+              <button onclick="rechazarGerenciaUI('${c.folio}')" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                Rechazar Excepción
+              </button>
+            </div>
+          </div>
+        `).join('');
+
+      // Solicitudes de 3ra+ Reprogramación en Gerencia
+      const reprogs = data.solicitudes_reprogramacion || [];
+      document.getElementById('lista-reprogramaciones-gerencia').innerHTML = reprogs.length === 0
+        ? '<p class="text-slate-400">No hay solicitudes de reprogramación extra pendientes.</p>'
+        : reprogs.map(r => `
+          <div class="p-4 rounded-lg border border-blue-300 bg-blue-50 flex flex-wrap justify-between items-center gap-3">
+            <div>
+              <span class="font-bold text-blue-950">Orden ${r.folio_orden}</span> — ${r.cliente}
+              <p class="text-xs text-slate-600 mt-0.5">Intento de reprogramación <b>#${r.intento_numero}</b> (Supera límite de 2/mes) | Nueva fecha solicitada: <b>${r.nueva_fecha_solicitada}</b></p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="resolverReprogramacionGerencia('${r.folio_orden}', true)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold">Autorizar Cambio</button>
+              <button onclick="resolverReprogramacionGerencia('${r.folio_orden}', false)" class="bg-red-600 hover:bg-red-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold">Rechazar Cambio</button>
+            </div>
           </div>
         `).join('');
 
@@ -305,7 +430,7 @@
       if (res.ok) {
         mostrarNotificacion(`Descuento aplicado a ${folio}. Nuevo total: $${data.total} MXN.`);
       } else {
-        mostrarNotificacion(`Bloqueo: ${data.detail} (Enviada a la pestaña de Gerencia).`, false);
+        mostrarNotificacion(`Bloqueo RN-01: ${data.detail} (Enviada a la pestaña de Gerencia).`, false);
       }
     }
 
@@ -313,7 +438,24 @@
       const res = await fetch(`/api/cotizaciones/${folio}/autorizar`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        mostrarNotificacion(`Cotización ${folio} autorizada por Gerencia (Lic. Renata Cárdenas).`);
+        mostrarNotificacion(`Cotización ${folio} aprobada por Gerencia (Lic. Renata Cárdenas).`);
+        cargarEstado();
+      } else {
+        mostrarNotificacion(data.detail, false);
+      }
+    }
+
+    async function rechazarGerenciaUI(folio) {
+      const motivo = prompt('Indique el motivo del rechazo gerencial:', 'Descuento o dimensión fuera de margen operativo');
+      if (!motivo) return;
+      const res = await fetch(`/api/cotizaciones/${folio}/rechazar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario_gerencia: 'Lic. Renata Cárdenas', motivo: motivo })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        mostrarNotificacion(`Cotización ${folio} rechazada por Gerencia (${data.estado}).`, false);
         cargarEstado();
       } else {
         mostrarNotificacion(data.detail, false);
@@ -335,7 +477,59 @@
         mostrarNotificacion(`Orden ${folio} programada con la cuadrilla ${data.cuadrilla}.`);
         cargarEstado();
       } else {
-        mostrarNotificacion(`Conflicto de Horario: ${data.detail}`, false);
+        mostrarNotificacion(`Conflicto de Horario (CA-06.3): ${data.detail}`, false);
+      }
+    }
+
+    async function reprogramarDesdeAdmin(folio) {
+      const val = document.getElementById('coord-reprog-' + folio).value;
+      if (!val) return;
+      const res = await fetch(`/api/ordenes/${folio}/reprogramar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nueva_fecha_inicio_iso: val + ':00',
+          fecha_solicitud_iso: obtenerFechaLocalISO()
+        })
+      });
+      const data = await res.json();
+      cargarEstado();
+      if (res.ok) {
+        mostrarNotificacion(`Orden ${folio} reprogramada (Cambio ${data.reprogramaciones_mes}/2 en el mes).`);
+      } else {
+        mostrarNotificacion(data.detail, false);
+      }
+    }
+
+    async function resolverReprogramacionGerencia(folio, aprobar) {
+      const res = await fetch(`/api/ordenes/${folio}/reprogramar/resolver?aprobar=${aprobar}`, { method: 'POST' });
+      const data = await res.json();
+      cargarEstado();
+      if (res.ok) {
+        if (data.aprobada) {
+          mostrarNotificacion(`Reprogramación extraordinaria de ${folio} autorizada por Gerencia.`);
+        } else {
+          mostrarNotificacion(data.mensaje, false);
+        }
+      }
+    }
+
+    async function cancelarDesdeAdmin(folio, modalidad) {
+      const res = await fetch(`/api/ordenes/${folio}/cancelar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fecha_solicitud_iso: obtenerFechaLocalISO(),
+          modalidad_cargo: modalidad
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        mostrarNotificacion(
+          `Orden ${folio}: ${data.estado}. Cargo: $${data.cargo} MXN (Anticipación: ${data.horas_anticipacion} hrs).`,
+          data.cargo === 0
+        );
+        cargarEstado();
       }
     }
 
@@ -349,6 +543,10 @@
 
     async function registrarIncidenciaUI(e) {
       e.preventDefault();
+      if (!imagenBase64Actual) {
+        mostrarNotificacion('Seleccione un archivo de imagen como evidencia.', false);
+        return;
+      }
       const folio = document.getElementById('sup-folio-inc').value;
       const res = await fetch(`/api/ordenes/${folio}/incidencias`, {
         method: 'POST',
@@ -356,12 +554,14 @@
         body: JSON.stringify({
           tipo: document.getElementById('sup-tipo-inc').value,
           descripcion: document.getElementById('sup-desc-inc').value,
-          fotos: [document.getElementById('sup-foto-inc').value]
+          fotos: [imagenBase64Actual]
         })
       });
       if (res.ok) {
-        mostrarNotificacion(`Incidencia registrada en la orden ${folio}.`);
+        mostrarNotificacion(`Incidencia con fotografía real registrada en la orden ${folio}.`);
         e.target.reset();
+        imagenBase64Actual = null;
+        document.getElementById('preview-contenedor').classList.add('hidden');
         cargarEstado();
       }
     }
@@ -388,7 +588,7 @@
     async function accesoDenegadoUI(folio) {
       const res = await fetch(`/api/ordenes/${folio}/acceso-denegado`, { method: 'POST' });
       if (res.ok) {
-        mostrarNotificacion(`Acceso denegado registrado en ${folio}. Cargo del 100% enviado a Facturación .`, false);
+        mostrarNotificacion(`Acceso denegado registrado en ${folio}. Cargo del 100% enviado a Facturación (RN-05).`, false);
         cargarEstado();
       }
     }
