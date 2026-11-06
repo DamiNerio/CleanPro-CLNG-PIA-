@@ -34,9 +34,9 @@ class Incidencia:
 
     def validar_para_cierre(self):
         if not self.descripcion.strip():
-            raise DomainError("El servicio no puede cerrarse con incidencias sin descripción (CA-10.4).")
+            raise DomainError("El servicio no puede cerrarse con incidencias sin descripción.")
         if not self.fotos:
-            raise DomainError("Toda incidencia requiere al menos una fotografía de evidencia (CA-10.1).")
+            raise DomainError("Toda incidencia requiere al menos una fotografía de evidencia.")
 
 @dataclass
 class ServicioExtra:
@@ -58,7 +58,7 @@ class Cuadrilla:
 
     def asignar_horario(self, inicio: datetime, fin: datetime):
         if not self.esta_disponible(inicio, fin):
-            raise DomainError(f"La cuadrilla {self.id} tiene un traslape de horario (CA-06.3, CA-07.2).")
+            raise DomainError(f"La cuadrilla {self.id} tiene un traslape de horario.")
         self.ventanas_asignadas.append((inicio, fin))
         self.estado = "Asignada"
 
@@ -91,7 +91,7 @@ class CotizacionFormal:
 
     def __post_init__(self):
         if not all([self.ubicacion.strip(), self.tipo_inmueble.strip(), self.frecuencia.strip(), self.datos_contacto.strip()]):
-            raise DomainError("Faltan campos obligatorios en la solicitud de cotización (CA-01.1, CA-01.2).")
+            raise DomainError("Faltan campos obligatorios en la solicitud de cotización.")
         self._calcular_estimaciones_y_totales()
 
     def _calcular_estimaciones_y_totales(self):
@@ -113,14 +113,14 @@ class CotizacionFormal:
 
     def aplicar_descuento(self, porcentaje: float, rol: str, usuario: str, motivo: str = "Contrato de frecuencia"):
         if self.estado == EstadoCotizacion.ACEPTADA:
-            raise DomainError("Una cotización aceptada no puede editarse (CA-05.4).")
+            raise DomainError("Una cotización aceptada no puede editarse.")
         spec = DescuentoAutorizablePorCoordinadorSpec()
         self.descuento = Descuento(porcentaje=porcentaje, motivo=motivo, usuario=usuario)
         self.total = self.subtotal.aplicar_porcentaje(porcentaje)
 
         if rol.lower() == "coordinador" and not spec.is_satisfied_by(porcentaje):
             self.estado = CotizacionStateMachine.transicionar(self.estado, EstadoCotizacion.PENDIENTE_AUTORIZACION)
-            raise DomainError("Descuentos mayores a 10% requieren autorización de gerencia (RN-01, CA-03.2).")
+            raise DomainError("Descuentos mayores a 10% requieren autorización de gerencia .")
 
     def autorizar_por_gerencia(self, usuario_gerencia: str):
         self.estado = CotizacionStateMachine.transicionar(self.estado, EstadoCotizacion.AUTORIZADA)
@@ -128,7 +128,7 @@ class CotizacionFormal:
 
     def enviar_al_cliente(self):
         if self.estado == EstadoCotizacion.PENDIENTE_AUTORIZACION:
-            raise DomainError("No se puede enviar una cotización pendiente de autorización de gerencia (CA-04.2).")
+            raise DomainError("No se puede enviar una cotización pendiente de autorización de gerencia.")
         self.estado = CotizacionStateMachine.transicionar(self.estado, EstadoCotizacion.ENVIADA)
         self.fecha_respuesta = datetime.utcnow()
 
@@ -193,7 +193,7 @@ class OrdenDeServicio:
 
     def recalcular_por_superficie_mayor(self, nueva_superficie_m2: float, fotos: List[str], autorizado_cliente: bool):
         if not fotos:
-            raise DomainError("El ajuste de superficie exige evidencia fotográfica (CA-15.1).")
+            raise DomainError("El ajuste de superficie exige evidencia fotográfica.")
         if nueva_superficie_m2 <= self.superficie.metros_cuadrados:
             raise DomainError("La nueva superficie debe ser mayor a la originalmente reportada.")
         if autorizado_cliente:
@@ -203,7 +203,7 @@ class OrdenDeServicio:
 
     def registrar_acceso_denegado(self, evidencia_foto: str):
         if not evidencia_foto.strip():
-            raise DomainError("El registro de acceso denegado requiere evidencia fotográfica o nota (CA-13.1).")
+            raise DomainError("El registro de acceso denegado requiere evidencia fotográfica o nota.")
         self.estado = OrdenServicioStateMachine.transicionar(self.estado, EstadoOrdenServicio.NO_EJECUTADO_CON_CARGO)
         self.monto_facturable = self.precio_total  # RN-05: 100% de penalización
         if self.cuadrilla_asignada and self.fecha_inicio_programada and self.fecha_fin_programada:
@@ -227,7 +227,7 @@ class OrdenDeServicio:
 
     def cerrar_servicio(self, firma: FirmaConformidad, hora_fin: Optional[datetime] = None):
         if not self.hora_inicio_real:
-            raise DomainError("No puede registrarse el término si no existe un registro de inicio (CA-09.2).")
+            raise DomainError("No puede registrarse el término si no existe un registro de inicio.")
         for inc in self.incidencias:
             inc.validar_para_cierre()
         self.hora_fin_real = hora_fin or datetime.utcnow()

@@ -305,7 +305,7 @@
       if (res.ok) {
         mostrarNotificacion(`Descuento aplicado a ${folio}. Nuevo total: $${data.total} MXN.`);
       } else {
-        mostrarNotificacion(`Bloqueo RN-01: ${data.detail} (Enviada a la pestaña de Gerencia).`, false);
+        mostrarNotificacion(`Bloqueo: ${data.detail} (Enviada a la pestaña de Gerencia).`, false);
       }
     }
 
@@ -335,7 +335,7 @@
         mostrarNotificacion(`Orden ${folio} programada con la cuadrilla ${data.cuadrilla}.`);
         cargarEstado();
       } else {
-        mostrarNotificacion(`Conflicto de Horario (CA-06.3): ${data.detail}`, false);
+        mostrarNotificacion(`Conflicto de Horario: ${data.detail}`, false);
       }
     }
 

@@ -25,7 +25,7 @@ class Superficie:
 
     def __post_init__(self):
         if self.metros_cuadrados <= 0:
-            raise DomainError("La superficie debe ser un valor numérico mayor a cero (CA-01.3).")
+            raise DomainError("La superficie debe ser un valor numérico mayor a cero.")
 
 @dataclass(frozen=True)
 class Descuento:
@@ -46,6 +46,6 @@ class FirmaConformidad:
 
     def __post_init__(self):
         if not self.nombre_firmante.strip():
-            raise DomainError("El nombre de quien firma es obligatorio (CA-11.2).")
+            raise DomainError("El nombre de quien firma es obligatorio.")
         if not self.conformidad and not self.motivo_inconformidad.strip():
-            raise DomainError("La inconformidad requiere un motivo obligatorio (CA-11.3).")
+            raise DomainError("La inconformidad requiere un motivo obligatorio.")
