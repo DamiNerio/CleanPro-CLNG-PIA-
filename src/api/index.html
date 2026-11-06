@@ -100,15 +100,15 @@
       </div>
 
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h3 class="text-base font-bold text-slate-900 mb-1">2. Seguimiento de Mis Servicios, Reprogramación y Firma</h3>
-        <p class="text-xs text-slate-500 mb-4">Consulte su fecha agendada, reprograme su cita (máximo 2 veces al mes sin autorización especial), cancele (sin costo con más de 24h de anticipación) o firme al concluir.</p>
+        <h3 class="text-base font-bold text-slate-900 mb-1">2. Seguimiento de Mis Servicios y Firma de Conformidad</h3>
+        <p class="text-xs text-slate-500 mb-4">Consulte el estado de su servicio agendado o firme digitalmente al concluir la visita.</p>
         <div id="lista-ordenes-cliente" class="space-y-3 text-sm text-slate-600"></div>
       </div>
     </div>
 
   </main>
 
-  <!-- Pie de página -->
+  <!-- Pie de página con acceso separado para personal interno -->
   <footer class="bg-white border-t border-slate-200 py-4 mt-8">
     <div class="max-w-6xl mx-auto px-6 flex justify-between items-center text-xs text-slate-400">
       <span>&copy; 2026 CleanPro Servicios de Limpieza. Todos los derechos reservados.</span>
@@ -117,12 +117,6 @@
   </footer>
 
   <script>
-    function obtenerFechaLocalISO() {
-      const ahora = new Date();
-      const offsetMs = ahora.getTimezoneOffset() * 60000;
-      return new Date(ahora.getTime() - offsetMs).toISOString().slice(0, 19);
-    }
-
     function mostrarNotificacion(mensaje, exito = true) {
       const cont = document.getElementById('notificacion');
       const caja = document.getElementById('notificacion-caja');
@@ -147,28 +141,22 @@
         ? '<p class="text-slate-400 py-2">No tiene cotizaciones registradas todavía. Complete el formulario para generar una.</p>'
         : data.cotizaciones.map(c => {
             const enRevision = c.estado === 'Pendiente de autorización';
-            const rechazada = c.estado === 'Propuesta descartada';
             return `
-              <div class="p-4 rounded-xl border ${rechazada ? 'border-red-200 bg-red-50/40' : 'border-slate-200 bg-slate-50'} flex flex-wrap justify-between items-center gap-3">
+              <div class="p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50">
                 <div>
                   <span class="font-bold text-slate-900">Folio ${c.folio}</span> — <span class="font-medium">${c.cliente}</span>
-                  <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                    rechazada ? 'bg-red-100 text-red-800' : enRevision ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                  }">
-                    ${rechazada ? 'Rechazada por Gerencia' : enRevision ? 'En revisión comercial' : c.estado}
+                  <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${enRevision ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${enRevision ? 'En revisión comercial' : c.estado}
                   </span>
-                  <p class="text-xs text-slate-500 mt-1">Superficie: ${c.superficie_m2} m² ${c.descuento > 0 ? `| Descuento solicitado: ${c.descuento}%` : ''}</p>
-                  ${rechazada && c.resolucion_gerencia ? `<p class="text-xs text-red-600 font-medium mt-1">${c.resolucion_gerencia}</p>` : ''}
+                  <p class="text-xs text-slate-500 mt-1">Superficie: ${c.superficie_m2} m² ${c.descuento > 0 ? `| Descuento aplicado: ${c.descuento}%` : ''}</p>
                 </div>
                 <div class="flex items-center gap-3">
                   <span class="text-lg font-extrabold text-slate-900">$${c.total} MXN</span>
                   ${c.estado === 'Aceptada'
                     ? '<span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">Servicio Solicitado</span>'
-                    : rechazada
-                      ? '<span class="text-xs font-bold text-red-700 bg-red-100 px-3 py-1.5 rounded-lg">No disponible</span>'
-                      : enRevision
-                        ? '<span class="text-xs text-amber-700 font-medium">Validando descuento / dimensión</span>'
-                        : `<button onclick="aceptarCotizacionUI('${c.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition">Aceptar Propuesta</button>`
+                    : enRevision
+                      ? '<span class="text-xs text-amber-700 font-medium">Validando descuento / dimensión</span>'
+                      : `<button onclick="aceptarCotizacionUI('${c.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition">Aceptar Propuesta</button>`
                   }
                 </div>
               </div>
@@ -178,104 +166,24 @@
       const divOrdCli = document.getElementById('lista-ordenes-cliente');
       divOrdCli.innerHTML = data.ordenes.length === 0
         ? '<p class="text-slate-400 py-2">Aún no cuenta con servicios en curso.</p>'
-        : data.ordenes.map(o => {
-            let textoFecha = 'Por asignar fecha';
-            let horasRestantes = null;
-            if (o.fecha_programada) {
-              const fechaCita = new Date(o.fecha_programada);
-              textoFecha = fechaCita.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
-              horasRestantes = ((fechaCita - new Date()) / 3600000).toFixed(1);
-            }
-
-            const galeriaIncidencias = (o.incidencias_detalle && o.incidencias_detalle.length > 0)
-              ? `<div class="mt-3 pt-3 border-t border-slate-200">
-                   <p class="text-xs font-bold text-amber-800 mb-1.5">Incidencias reportadas en sitio (${o.incidencias_detalle.length}):</p>
-                   <div class="space-y-2">
-                     ${o.incidencias_detalle.map(inc => `
-                       <div class="bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-xs">
-                         <p class="font-semibold text-amber-900">${inc.tipo}: <span class="font-normal text-slate-700">${inc.descripcion}</span></p>
-                         <div class="flex gap-2 mt-1.5 flex-wrap">
-                           ${inc.fotos.map(f => f.startsWith('data:image')
-                             ? `<img src="${f}" alt="Evidencia" class="h-16 w-24 object-cover rounded border border-amber-300 cursor-pointer" onclick="window.open('${f}')" />`
-                             : `<span class="text-[11px] bg-white px-2 py-0.5 rounded border">${f}</span>`
-                           ).join('')}
-                         </div>
-                       </div>
-                     `).join('')}
-                   </div>
-                 </div>`
-              : '';
-
-            return `
-              <div class="p-4 rounded-xl border border-slate-200 space-y-3">
-                <div class="flex flex-wrap justify-between items-center gap-3">
-                  <div>
-                    <span class="font-bold text-slate-900">Orden ${o.folio}</span> — ${o.cliente}
-                    <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">${o.estado}</span>
-                    <p class="text-xs text-slate-500 mt-1">
-                      Importe: <b>$${o.precio_total} MXN</b> | Cuadrilla: <b>${o.cuadrilla || 'En programación'}</b> | Fecha cita: <b>${textoFecha}</b>
-                    </p>
-                    ${o.fecha_programada ? `
-                      <p class="text-[11px] mt-0.5 ${horasRestantes >= 24 ? 'text-emerald-700' : 'text-amber-700'} font-medium">
-                        Reprogramaciones usadas este mes: <b>${o.reprogramaciones_mes} / 2</b> |
-                        Anticipación actual: <b>${horasRestantes} hrs</b> (${horasRestantes >= 24 ? 'Cancelación sin cargo $0' : 'Menos de 24h: cancelación aplica cargo del 50%'})
-                      </p>
-                    ` : ''}
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    ${o.estado === 'En ejecución' ? `
-                      <button onclick="cerrarServicioUI('${o.folio}', true)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold">Firmar de Conformidad</button>
-                      <button onclick="cerrarServicioUI('${o.folio}', false)" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold">Reportar Inconformidad</button>
-                    ` : ''}
-                    ${o.estado === 'Programada' ? `
-                      <button onclick="mostrarCajaReprogramar('${o.folio}')" class="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-semibold">Reprogramar Cita (${o.reprogramaciones_mes}/2)</button>
-                      <button onclick="cancelarOrdenUI('${o.folio}', ${horasRestantes})" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-semibold">Cancelar Cita</button>
-                    ` : ''}
-                  </div>
-                </div>
-
-                <!-- Panel desplegable para reprogramar cita -->
-                <div id="caja-reprog-${o.folio}" class="hidden bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-2">
-                  <div class="text-xs text-slate-700">
-                    <span class="font-semibold">Seleccione nueva fecha y hora:</span>
-                    <span class="text-slate-500 block">Si supera 2 reprogramaciones en el mes, se enviará a autorización de Gerencia.</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <input type="datetime-local" id="input-reprog-${o.folio}" value="2026-11-25T10:00" class="px-2.5 py-1.5 border rounded-lg text-xs bg-white" />
-                    <button onclick="confirmarReprogramacionUI('${o.folio}')" class="bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Confirmar Cambio</button>
-                  </div>
-                </div>
-
-                ${galeriaIncidencias}
-              </div>
-            `;
-          }).join('');
-    }
-
-    function mostrarCajaReprogramar(folio) {
-      const el = document.getElementById('caja-reprog-' + folio);
-      el.classList.toggle('hidden');
-    }
-
-    async function confirmarReprogramacionUI(folio) {
-      const val = document.getElementById('input-reprog-' + folio).value;
-      if (!val) return;
-      const res = await fetch(`/api/ordenes/${folio}/reprogramar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nueva_fecha_inicio_iso: val + ':00',
-          fecha_solicitud_iso: obtenerFechaLocalISO()
-        })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        mostrarNotificacion(`Cita ${folio} reprogramada con éxito (Reprogramación ${data.reprogramaciones_mes} de 2 permitidas en el mes).`);
-        cargarMisDatos();
-      } else {
-        mostrarNotificacion(data.detail, false);
-        cargarMisDatos();
-      }
+        : data.ordenes.map(o => `
+          <div class="p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+            <div>
+              <span class="font-bold text-slate-900">Orden ${o.folio}</span> — ${o.cliente}
+              <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">${o.estado}</span>
+              <p class="text-xs text-slate-500 mt-1">Importe total: $${o.precio_total} MXN | Estado de cuadrilla: ${o.cuadrilla ? 'Equipo asignado' : 'En programación'}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              ${o.estado === 'En ejecución' ? `
+                <button onclick="cerrarServicioUI('${o.folio}', true)" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold">Firmar de Conformidad</button>
+                <button onclick="cerrarServicioUI('${o.folio}', false)" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold">Reportar Inconformidad</button>
+              ` : ''}
+              ${o.estado === 'Programada' ? `
+                <button onclick="cancelarOrdenUI('${o.folio}')" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-semibold">Cancelar Cita</button>
+              ` : ''}
+            </div>
+          </div>
+        `).join('');
     }
 
     async function crearCotizacion(e) {
@@ -341,28 +249,12 @@
       }
     }
 
-    async function cancelarOrdenUI(folio, horasRestantes) {
-      const aviso = (horasRestantes !== null && horasRestantes < 24)
-        ? `Atención: Faltan ${horasRestantes} horas para su cita (< 24h). Se aplicará un cargo del 50% por cancelación tardía. ¿Desea confirmar la cancelación?`
-        : `Faltan ${horasRestantes} horas para su cita (más de 24h de anticipación). La cancelación no tendrá ningún costo ($0 MXN). ¿Desea cancelar su cita?`;
-
-      if (!confirm(aviso)) return;
-
-      const res = await fetch(`/api/ordenes/${folio}/cancelar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fecha_solicitud_iso: obtenerFechaLocalISO(),
-          modalidad_cargo: 'automatico'
-        })
-      });
+    async function cancelarOrdenUI(folio) {
+      if (!confirm('Nota: Las cancelaciones con menos de 24 horas de anticipación generan un cargo del 50%. ¿Desea continuar?')) return;
+      const res = await fetch(`/api/ordenes/${folio}/cancelar`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        const exito = data.cargo === 0;
-        mostrarNotificacion(
-          `Cita ${folio}: ${data.estado}. Cargo aplicado: $${data.cargo} MXN (Anticipación calculada: ${data.horas_anticipacion} hrs).`,
-          exito
-        );
+        mostrarNotificacion(`Su cita ${folio} ha sido cancelada (${data.estado}).`, false);
         cargarMisDatos();
       }
     }
