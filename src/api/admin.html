@@ -445,7 +445,7 @@
       }
     }
 
-    async function rechazarGerenciaUI(folio) {
+async function rechazarGerenciaUI(folio) {
       const motivo = prompt('Indique el motivo del rechazo gerencial:', 'Descuento o dimensión fuera de margen operativo');
       if (!motivo) return;
       const res = await fetch(`/api/cotizaciones/${folio}/rechazar`, {
