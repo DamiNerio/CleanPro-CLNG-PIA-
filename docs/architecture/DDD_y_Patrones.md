@@ -28,6 +28,7 @@ CleanPro opera con invariantes de negocio estrictas y ciclos de vida complejos: 
    * **Invariantes que protege:** Orquesta y protege a las entidades internas (`Cuadrilla`, `Incidencia`, `ServicioExtra`, `FirmaConformidad`); exige estar en estado `Programada` antes de poder iniciar (`En ejecución`) e impide registrar término sin marca de inicio previa (CA-09.2); bloquea el cierre si alguna incidencia carece de descripción o fotografía (CA-10.4); exige evidencia fotográfica para recálculo proporcional de superficie (RN-07) o acceso denegado (RN-05); calcula automáticamente el monto facturable al 100% o 50% según la regla aplicable.
 
 ### 2.2 Entities (Entidades)
+* **`Cliente`:** Cliente o prospecto identificado de forma única por su teléfono o correo normalizado (`81-1234-5678` y `8112345678` son el mismo cliente). Agrupa su historial de cotizaciones y servicios; el portal `/` solo le muestra lo suyo.
 * **`Cuadrilla`:** Posee identidad única (`C-03`, `C-05`, `C-07`), lista de integrantes activos y registro de ventanas de tiempo asignadas para impedir traslapes de horario.
 * **`Incidencia`:** Representa un percance en sitio asociado a una orden; contiene tipo, descripción, lista de fotografías y marca de tiempo.
 * **`ServicioExtra`:** Representa un trabajo adicional solicitado en el domicilio con descripción, costo y estado de autorización del cliente.
@@ -57,6 +58,8 @@ El patrón **Specification** encapsula reglas de negocio booleanas en clases ind
 4. **`ClienteSuperaLimiteReprogramacionesSpec` (RN-08):** Evalúa si el conteo mensual de reprogramaciones del cliente es mayor a 2 para disparar la alerta a gerencia.
 5. **`CuadrillaDisponibleSpec` (CA-06.3, CA-07.2):** Evalúa que el intervalo `[inicio_nuevo, fin_nuevo]` no se traslape con ninguna ventana `[inicio_existente, fin_existente]` de la cuadrilla.
 
+**Especificaciones combinables.** La clase base sobrecarga `&` (AND), `|` (OR) y `~` (NOT). RN-02 se construye combinando dos reglas pequeñas: `SuperficieDentroDeLimiteSpec(300) & MontoDentroDeLimiteSpec(8000)`, así cada límite se prueba por separado y se reutiliza.
+
 ### 3.2 Patrón State Machine (`src/domain/state_machines.py`)
 Se implementaron dos máquinas de estados deterministas que gobiernan las transiciones permitidas:
 
@@ -68,11 +71,19 @@ Se implementaron dos máquinas de estados deterministas que gobiernan las transi
    * Reglas de transición: Impide pasar de `Generada` a `En ejecución` sin antes haber pasado por `Programada` (asignación de fecha y cuadrilla), e impide pasar a cualquier estado de cierre sin haber estado en `En ejecución` (CA-09.2). Sólo los estados con obligación de pago pueden transicionar al estado `Facturada` (US-18).
 
 ### 3.3 Service Layer y Separación de Vistas (`src/application/services.py` y `src/api/`)
-* **Service Layer:** Dividido en cuatro servicios cohesivos (`ServicioCotizacion`, `ServicioProgramacion`, `ServicioEjecucion`, `ServicioExcepciones`) que orquestan los casos de uso sobre `CleanProRepository`.
+* **Service Layer:** Dividido en cinco servicios cohesivos (`ServicioCotizacion`, `ServicioProgramacion`, `ServicioEjecucion`, `ServicioExcepciones`, `ServicioAdministracion`) que recuperan el agregado, le piden ejecutar la operación y lo guardan. No contienen reglas de negocio.
 * **Capa de Presentación Desacoplada (`src/api/`):**
   * `GET /` (`index.html`): Portal Público del Cliente.
   * `GET /admin` (`admin.html`): Intranet Operativa y Administrativa.
   * `GET /docs`: Interfaz interactiva OpenAPI / Swagger UI.
+
+### 3.4 Patrón Repository y persistencia (`src/domain/repositories.py`, `src/infrastructure/`)
+* **Puerto:** `RepositorioCleanPro` (clase abstracta en el dominio) define qué necesita el negocio: guardar/obtener cotizaciones, órdenes, cuadrillas, clientes, registros facturables y cambios de personal.
+* **Adaptadores:** `RepositorioSQLAlchemy` (SQLite local / PostgreSQL en Docker y Render) y `RepositorioEnMemoria` (pruebas). Se elige con la variable `DATABASE_URL` mediante la fábrica `crear_repositorio`.
+* **Mappers (`src/infrastructure/mappers.py`):** traducen agregados <-> diccionarios, así las entidades no conocen la base de datos (*persistence ignorance*).
+
+### 3.5 Excepciones de dominio tipadas (`src/domain/exceptions.py`)
+`DomainError` (422), `TransicionInvalida` (409), `ConflictoDeAgenda` (409) y `AutorizacionRequerida` (403). La API traduce cada tipo a su código HTTP en un único manejador, sin conocer las reglas.
 
 ---
 
@@ -87,4 +98,5 @@ Se implementaron dos máquinas de estados deterministas que gobiernan las transi
 4. **I - Interface Segregation Principle (Segregación de Interfaces):**
    * Tanto la capa de servicios (`ServicioCotizacion`, `ServicioProgramacion`, `ServicioEjecucion`, `ServicioExcepciones`) como la capa de presentación (`/` para clientes vs. `/admin` para personal interno) están segregadas por rol para que ningún actor dependa de operaciones que no le corresponden.
 5. **D - Dependency Inversion Principle (Inversión de Dependencias):**
-   * El núcleo del dominio (`src/domain/`) no depende de FastAPI, HTML ni bases de datos externas. Los servicios de aplicación reciben el repositorio por inyección de dependencias.
+   * El núcleo del dominio (`src/domain/`) no depende de FastAPI, HTML ni bases de datos. Los servicios de aplicación dependen del puerto abstracto `RepositorioCleanPro` y reciben la implementación concreta por constructor; `src/api/main.py` es el único lugar que decide cuál usar (`crear_repositorio(settings.DATABASE_URL)`).
+   * **Evidencia:** `tests/test_repositories.py` ejecuta las mismas pruebas contra `RepositorioEnMemoria` y `RepositorioSQLAlchemy` sin cambiar los servicios (también demuestra Liskov).

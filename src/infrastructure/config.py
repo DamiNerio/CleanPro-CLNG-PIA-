@@ -12,5 +12,7 @@ class Settings:
     HORAS_CANCELACION_SIN_COSTO: int = int(os.getenv("HORAS_CANCELACION_SIN_COSTO", "24"))
     MAX_REPROGRAMACIONES_MES: int = int(os.getenv("MAX_REPROGRAMACIONES_MES", "2"))
     SLA_RESPUESTA_HORAS: float = float(os.getenv("SLA_RESPUESTA_HORAS", "4.0"))
+    # Monterrey usa UTC-6 todo el año; las fechas de programación se capturan en hora local.
+    ZONA_HORARIA_OFFSET_HORAS: float = float(os.getenv("ZONA_HORARIA_OFFSET_HORAS", "-6"))
 
 settings = Settings()

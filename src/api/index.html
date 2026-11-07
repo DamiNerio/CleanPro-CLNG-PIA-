@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CleanPro | Servicios de Limpieza Residencial y Empresarial</title>
   <script src="https://cdn.tailwindcss.com"></script>
+     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2310b981'/><text x='50' y='68' font-size='50' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>CP</text></svg>">
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
@@ -93,6 +94,15 @@
 
     <!-- Columna Derecha: Mis Cotizaciones y Mis Servicios Programados -->
     <div class="lg:col-span-2 space-y-6">
+      <div class="bg-emerald-50 p-5 rounded-2xl border border-emerald-200">
+        <h3 class="text-sm font-bold text-emerald-900 mb-1">¿Ya solicitó una cotización?</h3>
+        <p class="text-xs text-emerald-800 mb-3">Escriba el mismo teléfono o correo que nos dio para ver solo sus solicitudes.</p>
+        <form onsubmit="consultarPorContacto(event)" class="flex flex-wrap gap-2">
+          <input id="consulta-contacto" type="text" required placeholder="Ej. 8112345678 o cliente@correo.com" class="flex-grow min-w-[220px] px-3 py-2 border border-emerald-300 rounded-lg text-sm bg-white" />
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg text-sm">Ver mis solicitudes</button>
+        </form>
+      </div>
+
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <h3 class="text-base font-bold text-slate-900 mb-1">1. Mis Cotizaciones</h3>
         <p class="text-xs text-slate-500 mb-4">Revise el importe cotizado y confirme su aceptación para programar el servicio.</p>
@@ -132,8 +142,55 @@
       document.getElementById('notificacion').classList.add('hidden');
     }
 
+    // El cliente solo ve sus propias solicitudes, identificadas por su teléfono o correo.
+    function contactoActual() {
+      const campo = document.getElementById('consulta-contacto').value.trim();
+      if (campo) return campo;
+      try { return localStorage.getItem('cleanpro_contacto') || ''; } catch (e) { return ''; }
+    }
+
+    function recordarContacto(contacto) {
+      document.getElementById('consulta-contacto').value = contacto;
+      try { localStorage.setItem('cleanpro_contacto', contacto); } catch (e) { /* almacenamiento no disponible */ }
+    }
+
+    function consultarPorContacto(e) {
+      e.preventDefault();
+      recordarContacto(document.getElementById('consulta-contacto').value.trim());
+      cargarMisDatos();
+    }
+
+    // Estados del sistema traducidos a un lenguaje que el cliente entiende.
+    const ESTADO_CLIENTE = {
+      'Borrador': 'Lista para su respuesta',
+      'Autorizada': 'Lista para su respuesta',
+      'Enviada': 'Lista para su respuesta',
+      'Pendiente de autorización': 'En revisión comercial',
+      'Aceptada': 'Aceptada',
+      'Rechazada': 'Rechazada por usted',
+      'Propuesta descartada': 'No disponible, le contactaremos',
+      'Generada': 'Por agendar',
+      'Programada': 'Agendado',
+      'En ejecución': 'Nuestro equipo está trabajando',
+      'Cerrado con conformidad': 'Terminado',
+      'Cerrado con inconformidad': 'Terminado con observaciones',
+      'Cancelado sin cargo': 'Cancelado sin costo',
+      'Cancelado con cargo': 'Cancelado con cargo del 50%',
+      'No ejecutado con cargo': 'No se pudo realizar (sin acceso)',
+      'Facturada': 'Terminado y facturado'
+    };
+    const estadoCliente = e => ESTADO_CLIENTE[e] || e;
+    const formatoFecha = iso => iso ? new Date(iso).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' }) : 'Por definir';
+
     async function cargarMisDatos() {
-      const res = await fetch('/api/estado');
+      const contacto = contactoActual();
+      if (!contacto) {
+        document.getElementById('lista-cotizaciones-cliente').innerHTML = '<p class="text-slate-400 py-2">Solicite una cotización o escriba su teléfono/correo arriba para ver sus solicitudes.</p>';
+        document.getElementById('lista-ordenes-cliente').innerHTML = '<p class="text-slate-400 py-2">Aún no hay servicios para mostrar.</p>';
+        return;
+      }
+      document.getElementById('consulta-contacto').value = contacto;
+      const res = await fetch('/api/clientes/solicitudes?contacto=' + encodeURIComponent(contacto));
       const data = await res.json();
 
       const divCotCli = document.getElementById('lista-cotizaciones-cliente');
@@ -141,22 +198,24 @@
         ? '<p class="text-slate-400 py-2">No tiene cotizaciones registradas todavía. Complete el formulario para generar una.</p>'
         : data.cotizaciones.map(c => {
             const enRevision = c.estado === 'Pendiente de autorización';
+            const puedeResponder = ['Borrador', 'Autorizada', 'Enviada'].includes(c.estado);
             return `
               <div class="p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-slate-50">
                 <div>
                   <span class="font-bold text-slate-900">Folio ${c.folio}</span> — <span class="font-medium">${c.cliente}</span>
                   <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${enRevision ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
-                    ${enRevision ? 'En revisión comercial' : c.estado}
+                    ${estadoCliente(c.estado)}
                   </span>
                   <p class="text-xs text-slate-500 mt-1">Superficie: ${c.superficie_m2} m² ${c.descuento > 0 ? `| Descuento aplicado: ${c.descuento}%` : ''}</p>
                 </div>
                 <div class="flex items-center gap-3">
                   <span class="text-lg font-extrabold text-slate-900">$${c.total} MXN</span>
-                  ${c.estado === 'Aceptada'
-                    ? '<span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">Servicio Solicitado</span>'
+                  ${puedeResponder
+                    ? `<button onclick="aceptarCotizacionUI('${c.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition">Aceptar Propuesta</button>
+                       <button onclick="rechazarCotizacionUI('${c.folio}')" class="bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 px-3 py-2 rounded-lg text-xs font-semibold transition">No me interesa</button>`
                     : enRevision
-                      ? '<span class="text-xs text-amber-700 font-medium">Validando descuento / dimensión</span>'
-                      : `<button onclick="aceptarCotizacionUI('${c.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition">Aceptar Propuesta</button>`
+                      ? '<span class="text-xs text-amber-700 font-medium">Le avisaremos en cuanto esté lista</span>'
+                      : ''
                   }
                 </div>
               </div>
@@ -170,8 +229,8 @@
           <div class="p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-3">
             <div>
               <span class="font-bold text-slate-900">Orden ${o.folio}</span> — ${o.cliente}
-              <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">${o.estado}</span>
-              <p class="text-xs text-slate-500 mt-1">Importe total: $${o.precio_total} MXN | Estado de cuadrilla: ${o.cuadrilla ? 'Equipo asignado' : 'En programación'}</p>
+              <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">${estadoCliente(o.estado)}</span>
+              <p class="text-xs text-slate-500 mt-1">Fecha de visita: <b>${formatoFecha(o.fecha_programada)}</b> | Importe: $${o.precio_total} MXN | ${o.cuadrilla ? 'Equipo asignado: ' + o.integrantes.join(', ') : 'Equipo por asignar'}</p>
             </div>
             <div class="flex flex-wrap gap-2">
               ${o.estado === 'En ejecución' ? `
@@ -208,7 +267,10 @@
       });
       const data = await res.json();
       if (res.ok) {
-        mostrarNotificacion(`Su cotización con folio ${data.folio} ha sido generada por $${data.total} MXN.`);
+        const revision = data.estado === 'Pendiente de autorización'
+          ? ' Por el tamaño del inmueble, un gerente la revisará antes de confirmarla.' : '';
+        mostrarNotificacion(`Su cotización con folio ${data.folio} ha sido generada por $${data.total} MXN.${revision}`);
+        recordarContacto(document.getElementById('cli-contacto').value.trim());
         e.target.reset();
         cargarMisDatos();
       } else {
@@ -225,6 +287,14 @@
       } else {
         mostrarNotificacion(data.detail, false);
       }
+    }
+
+    async function rechazarCotizacionUI(folio) {
+      if (!confirm('¿Desea rechazar esta propuesta?')) return;
+      const res = await fetch(`/api/cotizaciones/${folio}/rechazar`, { method: 'POST' });
+      const data = await res.json();
+      mostrarNotificacion(res.ok ? `La cotización ${folio} fue rechazada. ¡Gracias por considerarnos!` : data.detail, res.ok);
+      cargarMisDatos();
     }
 
     async function cerrarServicioUI(folio, conforme) {
@@ -254,8 +324,11 @@
       const res = await fetch(`/api/ordenes/${folio}/cancelar`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        mostrarNotificacion(`Su cita ${folio} ha sido cancelada (${data.estado}).`, false);
+        const cargo = data.cargo > 0 ? ` Se aplicó un cargo de $${data.cargo} MXN por cancelar con menos de 24 horas.` : ' Sin costo.';
+        mostrarNotificacion(`Su cita ${folio} ha sido cancelada.${cargo}`, data.cargo === 0);
         cargarMisDatos();
+      } else {
+        mostrarNotificacion(data.detail, false);
       }
     }
 
