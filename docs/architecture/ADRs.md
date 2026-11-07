@@ -67,7 +67,7 @@ Este documento registra las decisiones arquitectónicas y técnicas tomadas por 
   1. *Compilar paquetes desde código fuente en el contenedor de Render:* Se descartó por el bloqueo de sistema de archivos de solo lectura en el registro de Cargo y mayores tiempos de despliegue.
   2. *Express.js / Spring Boot:* Se descartaron por requerir configuración adicional de Swagger o mayor consumo de memoria RAM en capas gratuitas de nube.
 * **Consecuencias:**
-  * **Positivas:** Descarga inmediata de paquetes binarios precompilados (*wheels*) en Render y GitHub Actions; cobertura de pruebas verificada en **82.25%** ejecutada en menos de 4 segundos; Swagger UI activo en `/docs`.
+  * **Positivas:** Descarga inmediata de paquetes binarios precompilados (*wheels*) en Render y GitHub Actions; compuerta de cobertura mínima del 80% aplicada en cada push por GitHub Actions; Swagger UI activo en `/docs`.
   * **Negativas:** Se debe declarar explícitamente la variable `PYTHON_VERSION=3.11.9` al configurar el entorno en Render.
 
 ---
@@ -88,3 +88,55 @@ Este documento registra las decisiones arquitectónicas y técnicas tomadas por 
 * **Consecuencias:**
   * **Positivas:** Separación clara de responsabilidades y privacidad de negocio; experiencia de usuario intuitiva sin jerga técnica; facilita enormemente la demostración en vivo durante la defensa del PIA.
   * **Negativas:** Requiere mantener sincronizados dos archivos HTML (`index.html` y `admin.html`) dentro del paquete `src/api/`.
+
+---
+
+## ADR-006: Persistencia Relacional con SQLAlchemy detrás de un Puerto de Repositorio
+
+* **Estado:** Aceptado (reemplaza el repositorio en memoria usado hasta la v1.0)
+* **Fecha:** 6 de noviembre de 2026
+* **Contexto:**  
+  La primera versión guardaba cotizaciones y órdenes en diccionarios de Python. Los datos se perdían en cada reinicio (Render apaga el servicio gratuito tras unos minutos sin uso), el contenedor PostgreSQL de Docker Compose no se usaba y la clase de repositorio estaba duplicada en `application/` e `infrastructure/`, rompiendo la separación de capas. Además, el problema principal del negocio (servicios sin facturar, cambios de nómina que se pierden) exige que esos registros sean persistentes.
+* **Decisión:**
+  1. Definir el puerto abstracto `RepositorioCleanPro` en `src/domain/repositories.py`; los servicios de aplicación dependen solo de él.
+  2. Implementar `RepositorioSQLAlchemy` (SQLAlchemy 2.0 Core) en `src/infrastructure/sqlalchemy_repository.py`, compatible con **SQLite** (local, CI) y **PostgreSQL** (Docker Compose, Render), elegido con `DATABASE_URL`.
+  3. Guardar cada agregado en su tabla: las columnas por las que se consulta (estado, cliente, cuadrilla, fecha programada, total) son columnas reales; el detalle interno del agregado (incidencias, extras, firma, descuento) se guarda en una columna `JSON` mediante `mappers.py`. Registros facturables y cambios de personal son tablas totalmente relacionales.
+  4. Conservar `RepositorioEnMemoria` (también serializa con los mappers) para pruebas unitarias rápidas.
+* **Alternativas Consideradas:**
+  1. *ORM completo con una tabla por entidad interna (incidencias, extras, firmas):* más normalizado, pero obliga a mapear cada cambio del modelo y a manejar migraciones; desproporcionado para el alcance del PIA.
+  2. *Seguir en memoria:* descartado porque pierde datos y no cumple el requisito "DB + App + Tests".
+  3. *Agregar Alembic para migraciones:* se pospone; con `metadata.create_all()` basta mientras el esquema sea nuevo.
+* **Consecuencias:**
+  * **Positivas:** Los datos sobreviven reinicios; el mismo código corre en SQLite y PostgreSQL; el dominio no conoce la base de datos (DIP); las pruebas de contrato (`tests/test_repositories.py`) demuestran que ambos adaptadores son intercambiables.
+  * **Negativas:** Consultar por campos internos del JSON (p. ej. tipo de incidencia) requiere leer el agregado completo; un cambio de esquema futuro requerirá introducir migraciones.
+
+---
+
+## ADR-007: Excepciones de Dominio Tipadas y Traducción Centralizada a Códigos HTTP
+
+* **Estado:** Aceptado
+* **Fecha:** 6 de noviembre de 2026
+* **Contexto:**  
+  Varios endpoints devolvían `500 Internal Server Error` ante folios inexistentes o reglas violadas, y cada controlador decidía su propio código con `try/except`, duplicando lógica.
+* **Decisión:**  
+  Crear `src/domain/exceptions.py` con `DomainError`, `TransicionInvalida`, `ConflictoDeAgenda` y `AutorizacionRequerida`, y `RecursoNoEncontrado` en la capa de aplicación. `src/api/main.py` registra un único manejador que traduce: 404 recurso inexistente · 403 requiere gerencia (RN-01/RN-02) · 409 transición inválida o traslape de agenda · 422 dato o regla inválida.
+* **Alternativas Consideradas:** Mantener `try/except` en cada endpoint (código repetido y fácil de olvidar); usar un solo código 400 para todo (el cliente no distingue el tipo de problema).
+* **Consecuencias:**
+  * **Positivas:** Controladores delgados; respuestas consistentes `{"detail", "tipo"}` que el portal y la intranet muestran al usuario; ningún error de negocio produce 500.
+  * **Negativas:** Cada nueva excepción de dominio debe ubicarse en la jerarquía correcta.
+
+---
+
+## ADR-008: El Portal del Cliente solo muestra las solicitudes del propio cliente
+
+* **Estado:** Aceptado (complementa ADR-005)
+* **Fecha:** 6 de noviembre de 2026
+* **Contexto:**  
+  En la revisión de la Unidad 4 el profesor, actuando como cliente, señaló que un cliente no entiende interfaces técnicas. El portal `/` resolvió eso, pero consultaba `/api/estado`, que devuelve las cotizaciones de todos los clientes junto con nómina y facturación.
+* **Decisión:**  
+  Introducir la entidad `Cliente`, identificada por su teléfono o correo normalizado, y el endpoint `GET /api/clientes/solicitudes?contacto=...`. El portal recuerda el contacto con el que se pidió la cotización y solo muestra esas solicitudes, con los estados traducidos a lenguaje del cliente ("Agendado", "Nuestro equipo está trabajando", "Cancelado sin costo"). `/api/estado` queda para la intranet.
+* **Alternativas Consideradas:** Cuentas con usuario y contraseña (fuera del alcance del BRD); mostrar todo (expone datos de otros clientes).
+* **Consecuencias:**
+  * **Positivas:** Privacidad entre clientes; lenguaje comprensible para el cliente; la demostración puede hacerse con el profesor como cliente.
+  * **Negativas:** Identificar por contacto no es autenticación: quien conozca el teléfono de otro cliente podría consultarlo. Para producción real se recomienda agregar un código enviado por correo o SMS.
+

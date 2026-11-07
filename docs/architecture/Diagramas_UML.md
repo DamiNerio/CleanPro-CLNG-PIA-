@@ -259,7 +259,7 @@ sequenceDiagram
     participant CliUI as Portal Cliente (/)
     participant SEj as ServicioEjecucion
     participant OS as OrdenDeServicio
-    participant Repo as CleanProRepository
+    participant Repo as RepositorioCleanPro (PostgreSQL)
     actor Administracion
 
     Cliente->>CliUI: Clic en "Firmar de Conformidad" (Nombre: Ing. Garza)
@@ -292,3 +292,106 @@ El diagrama BPMN completo del repositorio modela el proceso *Gestión Integral d
 5. **Carril Administración (`Intranet /admin`):** *Facturar penalización 50% (RN-04)* / *Facturar penalización 100% (RN-05)* / *Aplicar cambios directos a nómina (US-17)* / *Emitir factura vinculada al servicio cerrado (US-18, RN-09)* -> *Generar tablero mensual de KPIs (US-19)* -> Evento de fin *Servicio Facturado y Cerrado*.
 
 6. **Data Objects Modelados:** `[DO1] Solicitud Cotización`, `[DO2] Cotización Formal`, `[DO3] Orden de Servicio`, `[DO4] Registro Nómina`, `[DO5] Acta Digital + Fotos`, `[DO6] Factura Fiscal`.
+
+---
+
+## 5. Diagrama de Arquitectura por Capas y Persistencia
+
+```mermaid
+flowchart TB
+    subgraph Presentacion["src/api (Presentación)"]
+        UI1["Portal del Cliente /"]
+        UI2["Intranet /admin"]
+        SW["Swagger UI /docs"]
+        API["main.py · controladores + manejo de errores HTTP"]
+    end
+    subgraph Aplicacion["src/application (Casos de uso)"]
+        S1[ServicioCotizacion]
+        S2[ServicioProgramacion]
+        S3[ServicioEjecucion]
+        S4[ServicioExcepciones]
+        S5[ServicioAdministracion]
+    end
+    subgraph Dominio["src/domain (Reglas de negocio)"]
+        E["Entidades y Agregados<br/>CotizacionFormal · OrdenDeServicio · Cliente · Cuadrilla"]
+        VO["Value Objects<br/>Monto · Superficie · Descuento · FirmaConformidad"]
+        SP["Specifications RN-01..RN-08"]
+        SM["State Machines"]
+        P["Puerto RepositorioCleanPro"]
+    end
+    subgraph Infra["src/infrastructure"]
+        SQL["RepositorioSQLAlchemy"]
+        MEM["RepositorioEnMemoria (pruebas)"]
+        MAP["mappers.py"]
+        CFG["config.py (variables de entorno)"]
+    end
+    DB[("PostgreSQL / SQLite")]
+
+    UI1 & UI2 & SW --> API --> S1 & S2 & S3 & S4 & S5
+    S1 & S2 & S3 & S4 & S5 --> E & P
+    E --> VO & SP & SM
+    SQL -. implementa .-> P
+    MEM -. implementa .-> P
+    SQL --> MAP --> E
+    SQL --> DB
+```
+
+### 5.1 Modelo de datos (tablas)
+
+```mermaid
+erDiagram
+    clientes ||--o{ cotizaciones : solicita
+    cotizaciones ||--o| ordenes_servicio : "genera al aceptarse"
+    cuadrillas ||--o{ ordenes_servicio : atiende
+    ordenes_servicio ||--o| registros_facturables : "RN-09"
+    ordenes_servicio ||--o{ cambios_personal : "US-17"
+    clientes {
+        string id PK "contacto normalizado"
+        string nombre
+        string contacto
+        datetime fecha_registro
+    }
+    cotizaciones {
+        string folio PK
+        string cliente_id
+        string estado
+        float total
+        datetime fecha_creacion
+        json datos
+    }
+    ordenes_servicio {
+        string folio PK
+        string folio_cotizacion
+        string cliente_id
+        string estado
+        string cuadrilla_id
+        datetime fecha_inicio_programada
+        json datos
+    }
+    cuadrillas {
+        string id PK
+        string estado
+        json datos
+    }
+    registros_facturables {
+        string folio_orden PK
+        string cliente
+        float monto
+        string motivo
+        string folio_factura
+    }
+    cambios_personal {
+        string id PK
+        string folio_orden
+        string integrante_saliente
+        string integrante_entrante
+        string motivo
+        string fecha
+        bool procesado_en_nomina
+    }
+    reprogramaciones {
+        string clave PK "cliente|AAAA-MM"
+        int conteo
+    }
+```
+
