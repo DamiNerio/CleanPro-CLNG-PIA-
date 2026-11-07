@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CleanPro Intranet | Panel Operativo y Administrativo</title>
   <script src="https://cdn.tailwindcss.com"></script>
+     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%233b82f6'/><text x='50' y='68' font-size='50' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>CP</text></svg>">
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen font-sans">
 
@@ -250,6 +251,10 @@
                 <button onclick="iniciarServicioUI('${o.folio}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Registrar Inicio</button>
                 <button onclick="accesoDenegadoUI('${o.folio}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Acceso Denegado (100%)</button>
               ` : ''}
+              ${['Programada', 'En ejecución'].includes(o.estado) ? `
+                <button onclick="servicioExtraUI('${o.folio}')" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Servicio Extra</button>
+                <button onclick="ajusteSuperficieUI('${o.folio}', ${o.superficie_m2})" class="bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Superficie Mayor</button>
+              ` : ''}
             </div>
           </div>
         `).join('');
@@ -262,9 +267,14 @@
             <div>
               <span class="font-bold text-amber-950">${c.folio}</span> — ${c.cliente} | ${c.superficie_m2} m² | Descuento: <b>${c.descuento}%</b> | Total: <b>$${c.total} MXN</b>
             </div>
-            <button onclick="autorizarGerenciaUI('${c.folio}')" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold">
-              Aprobar Excepción (Gerencia)
-            </button>
+            <div class="flex gap-2">
+              <button onclick="autorizarGerenciaUI('${c.folio}')" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                Aprobar Excepción (Gerencia)
+              </button>
+              <button onclick="descartarGerenciaUI('${c.folio}')" class="bg-white hover:bg-amber-100 text-amber-800 border border-amber-400 px-3 py-2 rounded-lg text-xs font-bold">
+                Descartar
+              </button>
+            </div>
           </div>
         `).join('');
 
@@ -273,7 +283,12 @@
         : data.facturables.map(f => `
           <div class="p-3 rounded-lg border border-slate-200 flex justify-between items-center">
             <div><b>${f.folio_orden}</b> — ${f.cliente}<p class="text-xs text-slate-500">${f.motivo}</p></div>
-            <span class="font-bold text-emerald-700">$${f.monto} MXN</span>
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-emerald-700">$${f.monto} MXN</span>
+              ${f.folio_factura
+                ? `<span class="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded">Factura ${f.folio_factura}</span>`
+                : `<button onclick="facturarUI('${f.folio_orden}')" class="bg-slate-900 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Emitir Factura</button>`}
+            </div>
           </div>
         `).join('');
 
@@ -320,6 +335,54 @@
       }
     }
 
+    async function respuesta(res, mensajeOk) {
+      const data = await res.json();
+      mostrarNotificacion(res.ok ? mensajeOk(data) : data.detail, res.ok);
+      cargarEstado();
+      return data;
+    }
+
+    async function descartarGerenciaUI(folio) {
+      const res = await fetch(`/api/cotizaciones/${folio}/descartar`, { method: 'POST' });
+      respuesta(res, () => `Propuesta ${folio} descartada por Gerencia.`);
+    }
+
+    async function facturarUI(folio) {
+      const folioFactura = prompt('Folio de la factura fiscal emitida:', 'FAC-' + new Date().getFullYear() + '-');
+      if (!folioFactura) return;
+      const res = await fetch(`/api/facturables/${folio}/facturar`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folio_factura: folioFactura })
+      });
+      respuesta(res, () => `Servicio ${folio} vinculado a la factura ${folioFactura} (RN-09).`);
+    }
+
+    async function servicioExtraUI(folio) {
+      const descripcion = prompt('Servicio adicional solicitado en sitio:', 'Limpieza de terraza');
+      if (!descripcion) return;
+      const costo = parseFloat(prompt('Costo cotizado por el coordinador (MXN):', '600'));
+      if (isNaN(costo)) return;
+      const autorizado = confirm('¿El cliente AUTORIZÓ el cargo adicional? (Aceptar = Sí, Cancelar = No)');
+      const res = await fetch(`/api/ordenes/${folio}/extras`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descripcion, costo, autorizado_por_cliente: autorizado })
+      });
+      respuesta(res, d => autorizado ? `Extra autorizado. Nuevo total: $${d.precio_total} MXN.` : 'Extra rechazado por el cliente: queda registrado y no se realiza.');
+    }
+
+    async function ajusteSuperficieUI(folio, actual) {
+      const nueva = parseFloat(prompt(`Superficie real medida en sitio (m²). Reportada: ${actual} m²`, ''));
+      if (isNaN(nueva)) return;
+      const foto = prompt('Evidencia fotográfica (archivo o enlace):', 'evidencia_m2.jpg');
+      if (!foto) return;
+      const autorizado = confirm('¿El cliente ACEPTÓ el recálculo proporcional? (Aceptar = Sí, Cancelar = No)');
+      const res = await fetch(`/api/ordenes/${folio}/ajuste-superficie`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nueva_superficie_m2: nueva, fotos: [foto], autorizado_por_cliente: autorizado })
+      });
+      respuesta(res, d => autorizado ? `Precio recalculado: $${d.precio_total} MXN por ${d.superficie_m2} m².` : 'El cliente no aceptó: se realiza solo lo cotizado.');
+    }
+
     async function programarOrdenUI(e) {
       e.preventDefault();
       const folio = document.getElementById('coord-folio-orden').value;
@@ -341,10 +404,7 @@
 
     async function iniciarServicioUI(folio) {
       const res = await fetch(`/api/ordenes/${folio}/iniciar`, { method: 'POST' });
-      if (res.ok) {
-        mostrarNotificacion(`Inicio de servicio ${folio} registrado con hora del sistema.`);
-        cargarEstado();
-      }
+      respuesta(res, () => `Inicio de servicio ${folio} registrado con hora del sistema.`);
     }
 
     async function registrarIncidenciaUI(e) {
@@ -359,11 +419,8 @@
           fotos: [document.getElementById('sup-foto-inc').value]
         })
       });
-      if (res.ok) {
-        mostrarNotificacion(`Incidencia registrada en la orden ${folio}.`);
-        e.target.reset();
-        cargarEstado();
-      }
+      if (res.ok) e.target.reset();
+      respuesta(res, () => `Incidencia registrada en la orden ${folio}.`);
     }
 
     async function reportarAusenciaUI(e) {
@@ -378,19 +435,18 @@
           motivo: document.getElementById('sup-motivo-aus').value
         })
       });
-      if (res.ok) {
-        mostrarNotificacion(`Cambio de personal enviado al tablero de Nómina.`);
-        e.target.reset();
-        cargarEstado();
-      }
+      if (res.ok) e.target.reset();
+      respuesta(res, () => `Cambio de personal enviado al tablero de Nómina.`);
     }
 
     async function accesoDenegadoUI(folio) {
-      const res = await fetch(`/api/ordenes/${folio}/acceso-denegado`, { method: 'POST' });
-      if (res.ok) {
-        mostrarNotificacion(`Acceso denegado registrado en ${folio}. Cargo del 100% enviado a Facturación .`, false);
-        cargarEstado();
-      }
+      const evidencia = prompt('Evidencia del acceso denegado (foto o nota):', 'foto_puerta_cerrada.jpg');
+      if (!evidencia) return;
+      const res = await fetch(`/api/ordenes/${folio}/acceso-denegado`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ evidencia })
+      });
+      respuesta(res, d => `Acceso denegado registrado en ${folio}. Cargo de $${d.cargo} MXN (100%) enviado a Facturación.`);
     }
 
     cargarEstado();
