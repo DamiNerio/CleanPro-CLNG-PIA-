@@ -1,5 +1,5 @@
 from enum import Enum
-from src.domain.value_objects import DomainError
+from src.domain.exceptions import TransicionInvalida
 
 class EstadoCotizacion(str, Enum):
     BORRADOR = "Borrador"
@@ -41,7 +41,7 @@ class CotizacionStateMachine:
     @classmethod
     def transicionar(cls, estado_actual: EstadoCotizacion, estado_nuevo: EstadoCotizacion) -> EstadoCotizacion:
         if estado_nuevo not in cls.TRANSICIONES.get(estado_actual, set()):
-            raise DomainError(f"Transición de cotización inválida: {estado_actual.value} -> {estado_nuevo.value}")
+            raise TransicionInvalida(f"Transición de cotización inválida: {estado_actual.value} -> {estado_nuevo.value}")
         return estado_nuevo
 
 class EstadoOrdenServicio(str, Enum):
@@ -89,5 +89,5 @@ class OrdenServicioStateMachine:
     @classmethod
     def transicionar(cls, estado_actual: EstadoOrdenServicio, estado_nuevo: EstadoOrdenServicio) -> EstadoOrdenServicio:
         if estado_nuevo not in cls.TRANSICIONES.get(estado_actual, set()):
-            raise DomainError(f"Transición de orden inválida: {estado_actual.value} -> {estado_nuevo.value}")
+            raise TransicionInvalida(f"Transición de orden inválida: {estado_actual.value} -> {estado_nuevo.value}")
         return estado_nuevo

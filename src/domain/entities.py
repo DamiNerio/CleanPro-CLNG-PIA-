@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Dict
 import math
 
-from src.domain.value_objects import Monto, Superficie, Descuento, FirmaConformidad, DomainError
+from src.domain.value_objects import Monto, Superficie, Descuento, FirmaConformidad
+from src.domain.exceptions import DomainError, ConflictoDeAgenda, AutorizacionRequerida
 from src.domain.specifications import (
     DescuentoAutorizablePorCoordinadorSpec,
     CotizacionDentroDeLimiteCoordinadorSpec,
@@ -24,6 +25,33 @@ from src.domain.events import (
     ServicioCerrado,
 )
 from src.infrastructure.config import settings
+
+@dataclass
+class Cliente:
+    """Entidad: cliente o prospecto identificado de forma única por su dato de contacto.
+
+    Agrupa el historial de cotizaciones y servicios (Actividad 3 - Mapa de Dominio).
+    """
+    nombre: str
+    contacto: str
+    fecha_registro: datetime = field(default_factory=datetime.utcnow)
+
+    def __post_init__(self):
+        if not self.nombre.strip() or not self.contacto.strip():
+            raise DomainError("El cliente requiere nombre y dato de contacto.")
+
+    @property
+    def id(self) -> str:
+        return Cliente.normalizar_contacto(self.contacto)
+
+    @staticmethod
+    def normalizar_contacto(contacto: str) -> str:
+        """Correo en minúsculas o teléfono sin espacios/guiones: así 81-1234 y 811234 son el mismo cliente."""
+        limpio = contacto.strip().lower()
+        if "@" in limpio:
+            return limpio
+        digitos = "".join(ch for ch in limpio if ch.isdigit() or ch == "+")
+        return digitos or limpio
 
 @dataclass
 class Incidencia:
@@ -58,7 +86,7 @@ class Cuadrilla:
 
     def asignar_horario(self, inicio: datetime, fin: datetime):
         if not self.esta_disponible(inicio, fin):
-            raise DomainError(f"La cuadrilla {self.id} tiene un traslape de horario.")
+            raise ConflictoDeAgenda(f"La cuadrilla {self.id} tiene un traslape de horario.")
         self.ventanas_asignadas.append((inicio, fin))
         self.estado = "Asignada"
 
@@ -120,7 +148,19 @@ class CotizacionFormal:
 
         if rol.lower() == "coordinador" and not spec.is_satisfied_by(porcentaje):
             self.estado = CotizacionStateMachine.transicionar(self.estado, EstadoCotizacion.PENDIENTE_AUTORIZACION)
-            raise DomainError("Descuentos mayores a 10% requieren autorización de gerencia .")
+            raise AutorizacionRequerida("Descuentos mayores a 10% requieren autorización de gerencia.")
+
+    def descartar_por_gerencia(self, usuario_gerencia: str):
+        """US-04: gerencia rechaza la excepción de precio/dimensión (propuesta descartada)."""
+        self.estado = CotizacionStateMachine.transicionar(self.estado, EstadoCotizacion.RECHAZADA_GERENCIA)
+        self.autorizado_por_gerencia = None
+
+    def rechazar_por_cliente(self):
+        """US-05: el cliente rechaza la propuesta; la cotización queda cerrada sin orden."""
+        if self.estado == EstadoCotizacion.PENDIENTE_AUTORIZACION:
+            raise DomainError("La cotización sigue en revisión comercial; aún no puede responderse.")
+        self.estado = CotizacionStateMachine.transicionar(self.estado, EstadoCotizacion.RECHAZADA_CLIENTE)
+        self.fecha_respuesta = datetime.utcnow()
 
     def autorizar_por_gerencia(self, usuario_gerencia: str):
         self.estado = CotizacionStateMachine.transicionar(self.estado, EstadoCotizacion.AUTORIZADA)
@@ -141,6 +181,7 @@ class CotizacionFormal:
             folio=f"SRV-{self.folio.split('-')[-1]}",
             folio_cotizacion=self.folio,
             cliente_nombre=self.cliente_nombre,
+            datos_contacto=self.datos_contacto,
             ubicacion=self.ubicacion,
             superficie=self.superficie,
             precio_total=self.total,
@@ -156,6 +197,7 @@ class OrdenDeServicio:
     superficie: Superficie
     precio_total: Monto
     duracion_estimada_horas: float
+    datos_contacto: str = ""
     estado: EstadoOrdenServicio = EstadoOrdenServicio.GENERADA
     fecha_inicio_programada: Optional[datetime] = None
     fecha_fin_programada: Optional[datetime] = None
@@ -166,6 +208,7 @@ class OrdenDeServicio:
     extras: List[ServicioExtra] = field(default_factory=list)
     firma: Optional[FirmaConformidad] = None
     monto_facturable: Optional[Monto] = None
+    folio_factura: Optional[str] = None
     eventos: List[DomainEvent] = field(default_factory=list)
 
     def programar(self, fecha_inicio: datetime, cuadrilla: Optional[Cuadrilla] = None):
@@ -181,17 +224,47 @@ class OrdenDeServicio:
         self.estado = OrdenServicioStateMachine.transicionar(self.estado, EstadoOrdenServicio.EN_EJECUCION)
         self.hora_inicio_real = marca_tiempo or datetime.utcnow()
 
+    def registrar_ausencia(self, integrante_ausente: str, motivo: str, integrante_reemplazo: Optional[str] = None):
+        """US-12: sustituye al integrante ausente (o reduce el equipo) y emite AusenciaReportada (US-17)."""
+        if not integrante_ausente.strip() or not motivo.strip():
+            raise DomainError("La ausencia requiere el nombre del integrante y el motivo.")
+        cuadrilla = self.cuadrilla_asignada
+        if cuadrilla and integrante_ausente in cuadrilla.integrantes:
+            cuadrilla.integrantes.remove(integrante_ausente)
+            if integrante_reemplazo:
+                cuadrilla.integrantes.append(integrante_reemplazo)
+        self.eventos.append(AusenciaReportada(
+            folio_orden=self.folio,
+            id_integrante_ausente=integrante_ausente,
+            id_integrante_reemplazo=integrante_reemplazo or "",
+            motivo=motivo,
+        ))
+
     def documentar_incidencia(self, tipo: str, descripcion: str, fotos: List[str]):
         self.incidencias.append(Incidencia(tipo=tipo, descripcion=descripcion, fotos=fotos))
 
-    def solicitar_y_autorizar_extra(self, descripcion: str, costo: float, autorizado: bool):
+    def _exigir_servicio_activo(self):
+        if self.estado not in (EstadoOrdenServicio.PROGRAMADA, EstadoOrdenServicio.EN_EJECUCION):
+            raise DomainError("Solo se pueden ajustar servicios programados o en ejecución.")
+
+    def solicitar_y_autorizar_extra(self, descripcion: str, costo: float, autorizado: bool) -> ServicioExtra:
+        """US-14 / RN-06: la cuadrilla no realiza extras sin aprobación del cliente.
+
+        Se registra siempre (queda evidencia), pero solo suma al precio si el cliente lo autorizó.
+        """
+        self._exigir_servicio_activo()
+        if not descripcion.strip():
+            raise DomainError("El servicio adicional requiere una descripción.")
         extra = ServicioExtra(descripcion=descripcion, costo=Monto(costo), autorizado_por_cliente=autorizado)
         if autorizado:
             extra.fecha_autorizacion = datetime.utcnow()
-            self.extras.append(extra)
-            self.precio_total = Monto(round(self.precio_total.valor + costo, 2))
+            self.precio_total = self.precio_total.sumar(extra.costo)
+        self.extras.append(extra)
+        return extra
 
     def recalcular_por_superficie_mayor(self, nueva_superficie_m2: float, fotos: List[str], autorizado_cliente: bool):
+        """US-15 / RN-07: ajuste proporcional; si el cliente no acepta, se hace solo lo cotizado."""
+        self._exigir_servicio_activo()
         if not fotos:
             raise DomainError("El ajuste de superficie exige evidencia fotográfica.")
         if nueva_superficie_m2 <= self.superficie.metros_cuadrados:
@@ -242,3 +315,10 @@ class OrdenDeServicio:
         self.eventos.append(
             ServicioCerrado(folio_orden=self.folio, monto_final=self.monto_facturable.valor, con_conformidad=firma.conformidad)
         )
+
+    def facturar(self, folio_factura: str):
+        """US-18 / RN-09: vincula el servicio cerrado (o la penalización) con su factura fiscal."""
+        if not folio_factura.strip():
+            raise DomainError("El folio de la factura es obligatorio.")
+        self.estado = OrdenServicioStateMachine.transicionar(self.estado, EstadoOrdenServicio.FACTURADA)
+        self.folio_factura = folio_factura
